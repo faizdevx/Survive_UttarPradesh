@@ -1,5 +1,6 @@
 import { initGhoomo } from './ghoomo.js';
 import { initTilt, initGrip } from './feel.js';
+import { loadMplads, rupeesCr } from './hisaab.js';
 import { seasonNow, loadKohra, headline, cityLine } from './kohra.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
@@ -184,6 +185,7 @@ async function initMap() {
   $('#todayNews').addEventListener('change', showStatePins);
   $('#ghoomoBtn').addEventListener('click', () => ghoomo.open('hub'));
   $('#kohraBtn').addEventListener('click', () => ghoomo.open('kohra'));
+  $('#hisaabBtn').addEventListener('click', () => ghoomo.open('hisaab'));
   $('#kohraName').textContent = seasonNow() === 'kohra' ? 'Kohra meter' : 'Loo meter';
   loadKohra().then((data) => { $('#kohraLine').textContent = headline(data); }).catch(() => { $('#kohraLine').textContent = 'Forecast unavailable right now. Tap to retry.'; });
   $('#rolaToggle').addEventListener('click', () => {
@@ -311,10 +313,13 @@ function keepMapClear(bounds) {
   const box = $('#dossier');
   const rect = box.hidden ? null : box.getBoundingClientRect();
   const panel = $('.rola').getBoundingClientRect();
-  const left = panel.width && panel.height < innerHeight * 0.9 && !onPhone() ? panel.right + 12 : 12;
+  const width = rect ? rect.width + 16 : 16;
+  // In a small window the panels leave too little room to fit between, so UP is allowed under the left one
+  const roomy = innerWidth - width - panel.right > 320;
+  const left = panel.width && roomy && !onPhone() ? panel.right + 12 : 12;
   const pad = rect && rect.top > 0
     ? { paddingTopLeft: [12, 12], paddingBottomRight: [12, innerHeight - rect.top + 12] }
-    : { paddingTopLeft: [left, 16], paddingBottomRight: [rect ? rect.width + 16 : 16, 16] };
+    : { paddingTopLeft: [left, 16], paddingBottomRight: [width, 16] };
   state.map.flyToBounds(bounds, { ...pad, maxZoom: 11, duration: 0.6 });
 }
 // Each page gets its own address, so Back and shared links work
@@ -957,6 +962,9 @@ function openCity(name, origin) {
       ${projects.length ? projects.map((p) => `<div class="project"><b>${esc(p.name)}</b>${esc(p.cost)}${p.km ? `, ${esc(p.km)}` : ''}<br>
         <a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">Background</a>
         <a href="${newsUrl(`${p.name} progress`)}" target="_blank" rel="noopener">Latest status</a></div>`).join('') : '<p class="lead">No big state project on this list passes through here. Local work shows up in the news below.</p>'}
+      <p><button class="action" id="openHisaab" type="button">Open Mera Hisaab for the full picture</button></p>
+      <h3>MP fund payments run from ${esc(name)}</h3>
+      <div id="mpMoney">Loading…</div>
       <h3>Money named in headlines</h3>
       <p class="muted">Rupee amounts in the last 90 days of news, grouped by who the headline names. This is announced money, and a headline can repeat or overlap another.</p>
       <div id="moneyNews">Loading…</div>
@@ -1067,6 +1075,7 @@ function openCity(name, origin) {
     $('#plateOut').textContent = !m ? (e.target.value.length > 3 ? 'Not a UP plate' : '') : RTO[Number(m[1])] ? `Registered at the ${RTO[Number(m[1])]} RTO` : 'Unknown UP code';
   });
   $('#toChunav').addEventListener('click', () => setChunav(true));
+  $('#openHisaab').addEventListener('click', () => ghoomo.open('hisaab'));
   $('#lawyerName').addEventListener('input', (e) => {
     const n = e.target.value.trim();
     $('#lawyerGo').href = n ? `https://indiankanoon.org/search/?formInput=${encodeURIComponent(`"${n}" doctypes:allahabad`)}` : 'https://indiankanoon.org/';
@@ -1140,6 +1149,14 @@ function openCity(name, origin) {
       peopleBlock($('#lawPeople'), 'lawyer');
     },
     projects: () => {
+      loadMplads().then((mp) => {
+        const slot = $('#mpMoney');
+        if (!slot) return;
+        const here = mp.districts[name];
+        slot.innerHTML = here
+          ? `<p class="lead"><b>${rupeesCr(here.paid)}</b> paid, ${rupeesCr(here.inProgress)} payment in progress, across ${here.works.toLocaleString('en-IN')} works for: ${esc(here.seats.join(', '))}.</p><p class="muted">Government payment records for Lok Sabha MPs, current term, to ${esc(mp.lastDate)}. A payment does not prove a work is finished.</p>`
+          : '<p class="empty">No MP fund payment found for this district yet. That does not mean no work happened.</p>';
+      }).catch((err) => { const slot = $('#mpMoney'); if (slot) slot.innerHTML = failed('MP fund records', err); });
       moneyBlock($('#moneyNews'), search);
       newsBlock($('#projectNews'), `${search} project crore sanctioned OR completed OR inaugurated`);
     },

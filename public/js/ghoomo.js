@@ -1,8 +1,10 @@
 import { RTO, PARTIES } from './content.js';
+import { initHisaab } from './hisaab.js';
 import { LEVELS, ROADS, RAILS, seasonNow, loadKohra, nextMorning, nextPeak, worstFog, peakTemp, looLevel, headline } from './kohra.js';
 import { SAMAY_SPOTS, TRAIN_ROUTES, SEASON_FOOD, SMELLS, DIALECTS, KARIGAR } from './ghoomo-data.js';
 
 const PAGES = [
+  { key: 'hisaab', title: 'Mera Hisaab', line: "Where UP's money goes, with proof", colour: 'green' },
   { key: 'kohra', title: 'Kohra meter', line: 'Fog and loo risk, next 48 hours', colour: 'paper' },
   { key: 'samay', title: 'Samay slider', line: 'Drag the satellite back to 2014', colour: 'red' },
   { key: 'radio', title: 'Tune the TV', line: 'Local radio on the old set', colour: 'amber' },
@@ -29,7 +31,7 @@ export function initGhoomo(ctx) {
     box().classList.remove('sheet');
   }
 
-  function shell(title, body, { sheet = true } = {}) {
+  function shell(title, body, { sheet = true, map = false } = {}) {
     const b = box();
     b.hidden = false;
     b.classList.remove('peek');
@@ -37,7 +39,7 @@ export function initGhoomo(ctx) {
     b.scrollTop = 0;
     b.innerHTML = `<button class="close" id="closeBtn" aria-label="Close">X</button>
       <header class="g-head"><button class="g-back" id="gBack" type="button">Ghoomo</button><h1>${esc(title)}</h1></header>
-      <div class="g-body${sheet ? '' : ' no-map'}">${body}</div>`;
+      <div class="g-body${sheet || map ? '' : ' no-map'}">${body}</div>`;
     $('#closeBtn').addEventListener('click', closeDossier);
     $('#gBack').addEventListener('click', () => open('hub'));
   }
@@ -537,7 +539,9 @@ export function initGhoomo(ctx) {
     paintMode();
   }
 
-  const RUN = { kohra, hub, samay, radio, mausam, train, naak, bhasha, karigar, plate, ajeeb };
+  const renderHisaab = initHisaab(ctx);
+  const hisaab = () => renderHisaab(shell, (fn) => { cleanup = fn; });
+  const RUN = { hisaab, kohra, hub, samay, radio, mausam, train, naak, bhasha, karigar, plate, ajeeb };
 
   async function open(key = 'hub') {
     const run = RUN[key] || hub;

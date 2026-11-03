@@ -15,7 +15,7 @@ html, body { font-size: clamp(15.5px, 12px + .35vw, 18px); }
 .app:has(.dossier.sheet) { --cur: var(--dw-sheet); }
 
 /* Keys: a face, a side wall under it, and a press that sinks into the side */
-.kohra-btn, .ghoomo-btn, .chunav-btn, .near, .action, .quick-grid button, .tv-dial button, .samay-row button,
+.kohra-btn, .hisaab-btn, .ghoomo-btn, .chunav-btn, .near, .action, .quick-grid button, .tv-dial button, .samay-row button,
 .k-when button, .seat-form button, .close, .close-mini, .peek-btn, .lookup a, .radio-bar button, .soft-go,
 .tags button, .jump button, .tv-chips button, .samay-spots button, .bingo button, .help a, .g-card, .switch button,
 .leaflet-bar a {
@@ -32,7 +32,7 @@ html, body { font-size: clamp(15.5px, 12px + .35vw, 18px); }
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.kohra-btn:active, .ghoomo-btn:active, .chunav-btn:active, .near:active, .action:active, .quick-grid button:active, .tv-dial button:active,
+.kohra-btn:active, .hisaab-btn:active, .ghoomo-btn:active, .chunav-btn:active, .near:active, .action:active, .quick-grid button:active, .tv-dial button:active,
 .samay-row button:active, .k-when button:active, .seat-form button:active, .close:active, .close-mini:active, .lookup a:active,
 .radio-bar button:active, .soft-go:active, .tags button:active, .jump button:active, .tv-chips button:active, .samay-spots button:active,
 .bingo button:active, .help a:active, .leaflet-bar a:active {
@@ -40,7 +40,7 @@ html, body { font-size: clamp(15.5px, 12px + .35vw, 18px); }
   box-shadow: var(--glow), 0 1px 0 var(--side), 0 2px 4px #00000059;
 }
 @media (hover: hover) {
-  .kohra-btn:hover, .ghoomo-btn:hover, .chunav-btn:hover, .near:hover, .action:hover, .quick-grid button:hover, .tv-dial button:hover,
+  .kohra-btn:hover, .hisaab-btn:hover, .ghoomo-btn:hover, .chunav-btn:hover, .near:hover, .action:hover, .quick-grid button:hover, .tv-dial button:hover,
   .samay-row button:hover, .k-when button:hover, .tags button:hover, .jump button:hover, .tv-chips button:hover, .samay-spots button:hover,
   .bingo button:hover, .help a:hover { filter: brightness(1.07); }
 }
@@ -49,6 +49,9 @@ html, body { font-size: clamp(15.5px, 12px + .35vw, 18px); }
 
 .kohra-btn { --face: #ffffff; --side: #8f8b80; }
 .ghoomo-btn { --face: var(--yellow); --side: #937500; }
+.hisaab-btn { --face: var(--green); --side: #0f4a21; --ink: #fff; display: block; width: 100%; padding: 6px 8px; text-align: left; }
+.hisaab-btn b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.5rem; line-height: 1.1; }
+.hisaab-btn span { display: block; font-size: max(.72rem, 12px); line-height: 1.2; font-weight: 600; }
 .chunav-btn { --face: var(--red); --side: #7d1010; --ink: #fff; }
 .chunav-btn[aria-pressed='true'] { --face: #222; --side: #000; --ink: var(--yellow); }
 .near { --face: var(--green); --side: #0f4a21; --ink: #fff; overflow: hidden; }
@@ -220,6 +223,54 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
 .power { --depth: 8px; border: 0; background: radial-gradient(circle at 36% 28%, #ff8583, var(--red) 52%, #7d1010); box-shadow: inset 0 3px 3px #ffffff4d, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 var(--depth) 0 8px #120f0b, 0 18px 18px 6px #000000a6; transition: transform .1s var(--ease-press), box-shadow .1s; }
 .power:active { transform: translateY(5px); box-shadow: inset 0 3px 3px #ffffff33, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 3px 0 8px #120f0b; }
 
+/* Mera Hisaab */
+.stage { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: max(.74rem, 12px); font-weight: 800; white-space: nowrap; box-shadow: inset 0 1px 0 #ffffff66, 0 2px 0 #00000040; vertical-align: 1px; }
+.stage-promised { background: #d9d5c8; color: #000; }
+.stage-revised { background: #ffe08a; color: #000; }
+.stage-spent { background: #1c8fd6; color: #000; }
+.stage-paid { background: #1e7f3a; color: #fff; }
+.stage-pending { background: #f28a0f; color: #000; }
+.stage-reported { background: #8c5ac8; color: #fff; }
+.stage-none { background: #5a5a5a; color: #fff; }
+.h-stage-line { margin: 4px 0 2px; }
+.h-stack { display: flex; height: 34px; margin: 6px 0 10px; border-radius: 10px; overflow: hidden; box-shadow: inset 0 2px 0 #ffffff59, 0 5px 0 #8f8b80, 0 9px 12px #00000040; }
+.h-stack i { display: block; }
+.h-bars { display: grid; gap: 7px; margin: 6px 0; }
+.h-bar { display: grid; grid-template-columns: minmax(0, 11em) minmax(30px, 1fr) minmax(4.8em, auto); align-items: center; gap: 8px; font-size: .88rem; }
+.h-name { line-height: 1.15; font-weight: 600; }
+.h-name small { display: block; font-weight: 400; font-size: max(.72rem, 12px); opacity: .75; }
+.h-bar > b { text-align: right; white-space: nowrap; }
+.h-track { display: block; height: 15px; border-radius: 99px; background: #d3cfc2; box-shadow: inset 0 2px 3px #00000059; overflow: hidden; }
+.h-track i { display: block; height: 100%; min-width: 3px; border-radius: 99px; box-shadow: inset 0 2px 0 #ffffff4d; }
+.h-seat { all: unset; display: grid; grid-template-columns: minmax(0, 11em) minmax(30px, 1fr) minmax(4.8em, auto); align-items: center; gap: 8px; font-size: .88rem; cursor: pointer; padding: 5px 6px; border-radius: 9px; }
+.h-seat:hover { background: #0000000f; }
+.h-seat[aria-pressed='true'] { background: #fff; box-shadow: 0 3px 0 #8f8b80; }
+.h-seat:focus-visible { outline: 3px solid var(--red); }
+.h-tabs { position: sticky; top: 0; z-index: 3; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 8px 56px 10px 2px; margin: 0 0 6px; background: linear-gradient(180deg, var(--paper) 85%, transparent); }
+.h-tabs::-webkit-scrollbar { display: none; }
+.h-tabs button { flex: none; }
+.g-body h3 { font-size: 1.35rem; margin: 18px 0 6px; }
+.g-body .k-card h3 { margin-top: 10px; }
+.h-pair { padding: 8px 0 10px; border-bottom: 1px solid #00000033; }
+.h-pair-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+.h-change { font-family: var(--display); font-size: 1.25rem; }
+.h-change.short { color: #a81616; }
+.h-change.over { color: #14662f; }
+.h-pair-row { display: grid; grid-template-columns: 5.2em minmax(30px, 1fr) minmax(5.6em, auto); align-items: center; gap: 8px; margin-top: 4px; font-size: .86rem; }
+.h-pair-row > b { text-align: right; white-space: nowrap; }
+.h-project > summary { font-size: 1.3rem; line-height: 1.1; }
+.h-project > summary small { display: block; font-family: var(--body); font-size: .84rem; font-weight: 600; margin-top: 2px; }
+.ladder { list-style: none; margin: 10px 0; padding: 0 0 0 20px; border-left: 4px solid #8f8b80; }
+.ladder li { position: relative; padding: 5px 0 9px; }
+.ladder li::before { content: ''; position: absolute; left: -28px; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: #8f8b80; box-shadow: 0 2px 0 #0000004d; }
+.ladder li.has::before { background: #8c5ac8; }
+.ladder b { display: block; }
+.h-defs .stage { margin-bottom: 2px; }
+.rti { margin-top: 10px; }
+.rti-text { width: 100%; font: inherit; font-size: .86rem; line-height: 1.35; resize: vertical; }
+.rti-msg { align-self: center; }
+.lookup input#seatFilter { width: 100%; }
+
 /* Grip: drag to resize. A side bar on wide screens, a handle on phone sheets */
 .grip { position: absolute; z-index: 610; display: none; touch-action: none; }
 .dossier:not([hidden]) ~ .grip { display: block; }
@@ -266,6 +317,10 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
   .near { display: flex; }
   .near img { border-radius: 11px 0 0 11px; }
   .top-btns { gap: 10px; margin-bottom: 8px; }
+  .kohra-btn { grid-column: auto; }
+  .hisaab-btn b { font-size: 1.15rem; }
+  .ghoomo-btn span, .hisaab-btn span, .kohra-btn span, .chunav-btn span { font-size: 12px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .h-bar, .h-seat { grid-template-columns: minmax(0, 8.6em) minmax(24px, 1fr) minmax(4.4em, auto); }
 }
 
 /* Phones on their side: the page moves beside the map, and the panel folds small */
@@ -277,7 +332,8 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
   .rola, .app:has(.find[hidden]) .rola { left: 8px; right: auto; top: 8px; width: 210px; padding: 8px; max-height: calc(100dvh - 16px); }
   .top-btns { grid-template-columns: 1fr; }
   .kohra-btn { grid-column: auto; }
-  .chunav-btn span, .ghoomo-btn span { display: none; }
+  .chunav-btn span, .ghoomo-btn span, .hisaab-btn span { display: none; }
+  .hisaab-btn b { font-size: 1.15rem; }
   .find { left: auto; right: 8px; bottom: 22px; width: 240px; }
   .app:has(.dossier:not([hidden])) .find, .app:has(.dossier:not([hidden])) .rola { display: none; }
 }

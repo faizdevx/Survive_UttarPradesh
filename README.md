@@ -33,10 +33,16 @@ Then open http://localhost:4173.
 | Reddit threads | Reddit search RSS | Yes, cached 10 minutes |
 | Famous people | Wikidata, by birthplace | Yes, cached 10 minutes |
 | Projects | Press-reported totals in `public/js/content.js`, with live news | Totals fixed |
+| Mera Hisaab budget | PRS Legislative Research, UP Budget Analysis 2026-27 | Refreshed by `node scripts/build-hisaab.mjs` |
+| Mera Hisaab MP funds | MoSPI MPLADS portal, Lok Sabha MPs, current term. Contractor names removed | Server rechecks every 6 hours |
 
 ## Ghoomo
 
 Ten niche pages, most of them hand-collected: Kohra meter (live fog and loo risk), Samay slider (Esri Wayback imagery back to 2014), Tune the TV (Radio Browser), Sirf is mausam mein, Bhojan by train, Naak ka naksha, Bhasha slider, Aakhri karigar, Plate bingo and Ajeeb gaon. Hand-collected entries live in `public/js/ghoomo-data.js` and have not been checked on the ground. Dialect lines still need native speakers.
+
+## Mera Hisaab
+
+Keeps each kind of evidence apart, so a budget is never shown as a payment and a payment is never shown as a finished work. The stages and the rule of showing gaps are inspired by the open [Hisaab](https://github.com/theadiram/Hisaab) project (MIT). No code or data was copied.
 
 ## What it leaves out on purpose
 

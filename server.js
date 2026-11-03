@@ -3,6 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { fetchMplads } from './scripts/mplads-lib.mjs';
 
 const PORT = process.env.PORT || 4173;
 const ROOT = path.join(import.meta.dirname, 'public');
@@ -443,9 +444,29 @@ async function kohra() {
   return { at: new Date().toISOString(), hours: pick(all[0].hourly.time), d };
 }
 
-const TTLS = { kohra: 60 * 60 * 1000 };
+// The portal's answer is 14 MB, so a saved copy is served at once and refreshed behind the scenes.
+const MPLADS_CACHE = path.join(import.meta.dirname, '.cache', 'mplads.json');
+const MPLADS_EVERY = 6 * 60 * 60 * 1000;
+let mpladsBusy = false;
+function refreshMplads() {
+  if (mpladsBusy) return;
+  mpladsBusy = true;
+  const known = Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/districts.json'))));
+  fetchMplads(known).then((data) => {
+    fs.mkdirSync(path.dirname(MPLADS_CACHE), { recursive: true });
+    fs.writeFileSync(MPLADS_CACHE, JSON.stringify(data));
+  }).catch((err) => console.error('MPLADS refresh failed:', err.message)).finally(() => { mpladsBusy = false; });
+}
+async function mplads() {
+  const file = fs.existsSync(MPLADS_CACHE) ? MPLADS_CACHE : path.join(ROOT, 'data/hisaab-mplads.json');
+  const data = JSON.parse(fs.readFileSync(file));
+  if (Date.now() - Date.parse(data.fetchedAt) > MPLADS_EVERY) refreshMplads();
+  return data;
+}
 
-const API = { kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
+const TTLS = { kohra: 60 * 60 * 1000, mplads: 30 * 1000 };
+
+const API = { mplads, kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
