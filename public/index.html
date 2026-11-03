@@ -43,7 +43,10 @@
   <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
 
   <section class="rola" id="rola">
-    <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
+    <div class="top-btns">
+      <button id="ghoomoBtn" class="ghoomo-btn" type="button"><b>Ghoomo UP</b><span>Niche stuff, 9 ways</span></button>
+      <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
+    </div>
     <div id="chunavPanel" class="chunav-panel" hidden>
       <form id="seatForm" class="seat-form">
         <label for="seatQ">Your area, find your seat</label>
@@ -62,7 +65,8 @@
       <p class="note">Boundaries are approximate. Confirm your seat on the Election Commission's voter search.</p>
     </div>
     <div id="rolaPanel">
-    <h2>Rola kiska?</h2>
+    <h2><button id="rolaToggle" class="rola-toggle" type="button" aria-expanded="true" aria-controls="rolaBody">Rola kiska?</button></h2>
+    <div id="rolaBody">
     <div class="switch" role="radiogroup" aria-label="Map layer">
       <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
       <button role="radio" aria-checked="false" data-mode="mla">Vidhan Sabha</button>
@@ -83,15 +87,19 @@
       </div>
     </details>
     </div>
+    </div>
   </section>
 
   <div class="find">
     <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span>Near me</span></button>
-    <select id="districtPick" aria-label="Choose a district"><option value="">Or pick a district</option></select>
+    <select id="districtPick" aria-label="Choose a district"><option value="">Pick a district</option></select>
     <p id="findMsg" class="note" role="status"></p>
   </div>
 
-  <aside id="dossier" class="dossier" aria-label="City dossier" hidden></aside>
+  <aside id="dossier" class="dossier" aria-label="Details" tabindex="-1" hidden></aside>
+  <button id="peekBtn" class="peek-btn" type="button" hidden>Show map</button>
+  <section id="samayBar" class="samay-bar" aria-label="Samay slider" hidden></section>
+  <div id="radioBar" class="radio-bar" hidden><span>On air: <b id="radioName"></b></span><button id="radioStop" type="button">Stop</button></div>
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

@@ -2,6 +2,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 const PORT = process.env.PORT || 4173;
 const ROOT = path.join(import.meta.dirname, 'public');
@@ -139,14 +140,7 @@ const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://maps.mail.
 let overpassDownUntil = 0;
 
 async function overpass(body) {
-  let failure;
-  for (const url of OVERPASS) {
-    try {
-      const text = await get(url, { method: 'POST', body: new URLSearchParams({ data: body }), headers: { 'User-Agent': 'SurviveUP/0.1', Accept: '*/*' }, signal: AbortSignal.timeout(12000) });
-      return JSON.parse(text);
-    } catch (err) { failure = err; }
-  }
-  throw failure;
+  return Promise.any(OVERPASS.map(async (url) => JSON.parse(await get(url, { method: 'POST', body: new URLSearchParams({ data: body }), headers: { 'User-Agent': 'SurviveUP/0.1', Accept: '*/*' }, signal: AbortSignal.timeout(9000) }))));
 }
 
 async function osm({ key, lat, lng, r }) {
@@ -166,7 +160,7 @@ async function osm({ key, lat, lng, r }) {
     })).filter((p) => p.lat != null);
     return found;
   } catch {
-    overpassDownUntil = Date.now() + 2 * 60 * 1000;
+    overpassDownUntil = Date.now() + 5 * 60 * 1000;
     return photon(key, la, lo, ra);
   }
 }
@@ -373,7 +367,44 @@ async function candidates() {
   return { ready: !/Page Not Found/i.test(html), url: 'https://www.myneta.info/uttarpradesh2027/' };
 }
 
-const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates };
+// One archive date per half year, plus the newest
+async function wayback() {
+  const cfg = JSON.parse(await get('https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json'));
+  const all = Object.entries(cfg).map(([id, v]) => ({ id, date: v.itemTitle.match(/\d{4}-\d{2}-\d{2}/)?.[0] })).filter((r) => r.date).sort((a, b) => a.date.localeCompare(b.date));
+  const seen = new Set();
+  const picked = all.filter((r) => {
+    const half = `${r.date.slice(0, 4)}-${Number(r.date.slice(5, 7)) <= 6 ? 1 : 2}`;
+    return !seen.has(half) && seen.add(half);
+  });
+  if (picked[picked.length - 1] !== all[all.length - 1]) picked.push(all[all.length - 1]);
+  return picked;
+}
+
+// Radio Browser asks clients to try its mirrors in turn
+const RADIO_HOSTS = ['de1', 'at1', 'nl1', 'fi1'];
+async function radioSearch(query) {
+  let failure;
+  for (const host of RADIO_HOSTS) {
+    try {
+      return JSON.parse(await get(`https://${host}.api.radio-browser.info/json/stations/search?${query}&hidebroken=true&limit=30&order=votes&reverse=true`, { signal: AbortSignal.timeout(10000) }));
+    } catch (err) { failure = err; }
+  }
+  throw failure;
+}
+const NATIONAL = /^Vividh Bharati$|Akashvani AIR FM Gold|All India Radio News|Fm Gold Delhi|FM Rainbow Delhi|Radio Mirchi Hindi/i;
+async function radio() {
+  const local = await radioSearch('country=India&state=Uttar%20Pradesh');
+  const cities = await Promise.all(['Lucknow', 'Agra', 'Varanasi', 'Kanpur', 'Prayagraj', 'Allahabad', 'Gorakhpur', 'Meerut'].map((c) => radioSearch(`countrycode=IN&name=${c}`).catch(() => [])));
+  const bhojpuri = await radioSearch('countrycode=IN&name=Bhojpuri').catch(() => []);
+  const national = (await Promise.all(['Vividh Bharati', 'Akashvani', 'AIR FM', 'All India Radio', 'Radio Mirchi'].map((n) => radioSearch(`countrycode=IN&name=${encodeURIComponent(n)}`).catch(() => [])))).flat().filter((s) => NATIONAL.test(s.name.trim()));
+  const seen = new Set();
+  const band = (band, list) => list.map((s) => ({ band, name: s.name.trim(), url: s.url_resolved }));
+  // https only, so the stations also play once the site is hosted
+  return [...band('From UP', [...local, ...cities.flat()]), ...band('Bhojpuri', bhojpuri), ...band('National', national)]
+    .filter((s) => s.url?.startsWith('https://') && !seen.has(s.name.toLowerCase()) && seen.add(s.name.toLowerCase()));
+}
+
+const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -396,7 +427,16 @@ const server = http.createServer(async (req, res) => {
   if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+    const ext = path.extname(file);
+    const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', Vary: 'Accept-Encoding' };
+    if (ext === '.jpg') headers['Cache-Control'] = 'public, max-age=86400';
+    // Text compresses well, which matters for the seat map on a phone
+    if (ext !== '.jpg' && ext !== '.png' && /gzip/.test(req.headers['accept-encoding'] || '')) {
+      headers['Content-Encoding'] = 'gzip';
+      res.writeHead(200, headers);
+      return res.end(zlib.gzipSync(data));
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 });

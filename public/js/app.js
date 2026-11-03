@@ -1,3 +1,4 @@
+import { initGhoomo } from './ghoomo.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -25,7 +26,12 @@ const state = { age: Number(store.get('age')) || null, mode: 'party', districts:
 function intro() {
   const tv = $('#tv');
   const canvas = $('#static');
-  const tick = () => { $('#clock').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }); };
+  // A shared link goes straight to its page
+  if (location.hash) { tv.remove(); return; }
+  const tick = () => {
+    const el = $('#clock');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
   tick();
   const clock = setInterval(tick, 30000);
 
@@ -84,6 +90,10 @@ function mlaCounts(name) {
 
 function style(feature) {
   const d = state.districts[feature.properties.district];
+  if (state.overlay) {
+    const strong = state.overlay.strong?.(d.name);
+    return { fillColor: state.overlay.fill(d.name), fillOpacity: strong ? 0.75 : 0.28, color: '#000', weight: strong ? 2 : 0.8, dashArray: null };
+  }
   let fill = '#777';
   let dash = null;
   if (state.mode === 'party') {
@@ -104,6 +114,7 @@ function style(feature) {
 
 function tipFor(name) {
   const d = state.districts[name];
+  if (state.overlay) return state.overlay.tip(name);
   if (state.mode === 'party') {
     return `<b>${esc(name)}</b>${d.seats.map((s) => `${esc(s.seat)}: ${esc(PARTIES[s.party]?.name || s.party)}`).join('<br>')}`;
   }
@@ -127,7 +138,7 @@ function renderLegend() {
 }
 
 async function initMap() {
-  const map = L.map('map', { zoomControl: true, minZoom: 6, maxBounds: [[22, 74], [32, 88]] }).setView([27.0, 80.6], 7);
+  const map = L.map('map', { zoomControl: innerWidth > 860, zoomSnap: 0.25, minZoom: 5, maxBounds: [[22, 74], [32, 88]] }).setView([27.0, 80.6], 7);
   state.map = map;
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagery Esri, Maxar. Places OpenStreetMap, Wikidata', maxZoom: 19 }).addTo(map);
   map.createPane('labels');
@@ -138,6 +149,7 @@ async function initMap() {
 
   state.newsPins = L.layerGroup().addTo(map);
   state.statePins = L.layerGroup().addTo(map);
+  state.ghoomoPins = L.layerGroup().addTo(map);
   const [districts, geo, netas] = await Promise.all(['data/districts.json', 'data/up.geojson', 'data/netas.json'].map((u) => fetch(u).then((r) => r.json())));
   state.districts = districts;
   state.netas = netas;
@@ -147,10 +159,12 @@ async function initMap() {
     onEachFeature(f, layer) {
       const name = f.properties.district;
       layer.bindTooltip(() => tipFor(name), { sticky: true, className: 'dist-tip' });
-      layer.on('click', () => openCity(name));
+      layer.on('click', () => { if (state.overlay?.click) state.overlay.click(name); else if (!state.exploring) openCity(name); });
     },
   }).addTo(map);
-  map.fitBounds(state.layer.getBounds(), { paddingTopLeft: [260, 10] });
+  // Panels cover part of the map, so UP is fitted inside what stays visible
+  const phone = innerWidth <= 860;
+  map.fitBounds(state.layer.getBounds(), phone ? { paddingTopLeft: [8, 150], paddingBottomRight: [8, 80] } : { paddingTopLeft: [340, 10] });
 
   map.on('zoomend', () => state.layer.setStyle(style));
   $('#districtPick').insertAdjacentHTML('beforeend', Object.keys(districts).sort().map((n) => `<option>${esc(n)}</option>`).join(''));
@@ -165,13 +179,24 @@ async function initMap() {
   }));
   $('#nearMe').addEventListener('click', nearMe);
   $('#todayNews').addEventListener('change', showStatePins);
+  $('#ghoomoBtn').addEventListener('click', () => ghoomo.open('hub'));
+  $('#rolaToggle').addEventListener('click', () => {
+    const body = $('#rolaBody');
+    body.hidden = !body.hidden;
+    $('#rolaToggle').setAttribute('aria-expanded', !body.hidden);
+  });
+  if (phone) $('#rolaToggle').click();
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && (!$('#dossier').hidden || document.body.classList.contains('samay-on'))) closeDossier(); });
+  addEventListener('popstate', route);
+  syncPeek();
   loadStateNews();
+  route();
 }
 
 /* Today's news across the state */
 const namePattern = (n) => new RegExp(`\\b${(SEARCH_NAME[n] || n).replace(/[^\w ]/g, '')}\\b`, 'i');
 function showStatePins() {
-  const on = $('#todayNews').checked && !state.current;
+  const on = $('#todayNews').checked && !state.current && !state.exploring && !chunav.on;
   if (on) state.statePins.addTo(state.map); else state.statePins.remove();
 }
 async function loadStateNews() {
@@ -261,6 +286,42 @@ function flyVisible(lat, lng, zoom) {
   state.map.flyTo(state.map.unproject(point, zoom), zoom);
 }
 function focusPlace(p) { flyVisible(p.lat, p.lng, 16); }
+const onPhone = () => innerWidth <= 860;
+const peekMap = () => { if (onPhone()) $('#dossier').classList.add('peek'); };
+function syncPeek() {
+  const box = $('#dossier');
+  const btn = $('#peekBtn');
+  const paint = () => {
+    btn.hidden = box.hidden || !onPhone() || box.classList.contains('sheet') || Boolean(box.querySelector('.no-map'));
+    btn.textContent = box.classList.contains('peek') ? 'Back to page' : 'Show map';
+  };
+  new MutationObserver(paint).observe(box, { attributes: true, attributeFilter: ['hidden', 'class'] });
+  btn.addEventListener('click', () => box.classList.toggle('peek'));
+  addEventListener('resize', paint);
+  paint();
+}
+// Fits a shape inside the part of the map that the page does not cover
+function keepMapClear(bounds) {
+  const box = $('#dossier');
+  const pad = onPhone() ? { paddingBottomRight: [0, innerHeight * 0.54], paddingTopLeft: [8, 8] } : { paddingBottomRight: [box.hidden ? 20 : box.offsetWidth + 20, 20], paddingTopLeft: [340, 20] };
+  state.map.flyToBounds(bounds, { ...pad, maxZoom: 11, duration: 0.6 });
+}
+// Each page gets its own address, so Back and shared links work
+function go(hash) {
+  const next = hash ? `#${hash}` : location.pathname + location.search;
+  if ((hash ? `#${hash}` : '') !== location.hash) history.pushState(null, '', next);
+}
+async function route() {
+  const [kind, value] = location.hash.slice(1).split('/').map(decodeURIComponent);
+  if (kind === 'city' && state.districts[value]) {
+    if (chunav.on) await setChunav(false);
+    if (state.current !== value || $('#dossier').hidden) openCity(value);
+  } else if (kind === 'seat' && Number(value)) {
+    if (!chunav.on) await setChunav(true);
+    if (chunav.seats[value] && chunav.current !== Number(value)) openSeat(Number(value));
+  } else if (kind === 'ghoomo') ghoomo.open(value);
+  else if (!$('#dossier').hidden || document.body.classList.contains('samay-on')) closeDossier();
+}
 async function places(keys, radius) {
   const { lat, lng } = state.origin;
   const sets = await Promise.all(keys.map((key) => api('osm', { key, lat, lng, r: radius || 15000 })));
@@ -300,7 +361,13 @@ function placeList(list, limit = 10) {
 }
 function wirePlaces(el, list) {
   const pool = named(list);
-  el.querySelectorAll('[data-place]').forEach((b) => b.addEventListener('click', () => { drawPins(pool); focusPlace(pool[Number(b.dataset.place)]); }));
+  el.querySelectorAll('[data-place]').forEach((b) => b.addEventListener('click', () => {
+    const p = pool[Number(b.dataset.place)];
+    drawPins(pool);
+    focusPlace(p);
+    peekMap();
+    L.popup({ offset: [0, -4] }).setLatLng([p.lat, p.lng]).setContent(`<b>${esc(p.name)}</b><br><a href="${dirLink(p)}" target="_blank" rel="noopener">Get directions</a>`).openOn(state.map);
+  }));
 }
 
 /* Reddit */
@@ -357,6 +424,7 @@ async function newsBlock(el, q, { pins = false } = {}) {
       el.querySelectorAll('[data-news]').forEach((b) => b.addEventListener('click', () => {
         const n = located[Number(b.dataset.news)];
         flyVisible(n.lat, n.lng, 12);
+        peekMap();
       }));
       const city = state.current;
       api('geonews', { q, lat: d.lat, lng: d.lng, city: d.city.en || city }).then((spots) => {
@@ -469,6 +537,7 @@ async function nearbyBlock(el) {
       state.pins.clearLayers();
       L.marker([p.lat, p.lng], { icon: pinIcon() }).addTo(state.pins).bindPopup(`<b>${esc(p.name)}</b><br><a href="${safeUrl(p.url)}" target="_blank" rel="noopener">Read on Wikipedia</a><br><a href="${dirLink(p)}" target="_blank" rel="noopener">Get directions</a>`).openPopup();
       focusPlace(p);
+      peekMap();
     }));
   } catch (err) { el.innerHTML = failed('landmarks', err); }
 }
@@ -477,11 +546,39 @@ async function nearbyBlock(el) {
 const loader = (fn) => ({ fn, done: false });
 
 function closeDossier() {
+  ghoomo.leave();
   $('#dossier').hidden = true;
+  $('#dossier').classList.remove('peek');
   state.current = null;
+  chunav.current = null;
+  go('');
   state.newsPins.clearLayers();
   showStatePins();
   state.layer.setStyle(style);
+  chunav.layer?.setStyle(seatStyle);
+}
+
+// Long pages get a row of jump buttons under the title
+function addJumpNav(box) {
+  const secs = [...box.querySelectorAll(':scope > section')];
+  const nav = document.createElement('nav');
+  nav.className = 'jump';
+  nav.setAttribute('aria-label', 'Jump to section');
+  nav.innerHTML = secs.map((s, i) => `<button type="button" data-jump="${i}">${esc(s.querySelector('h2')?.textContent || '')}</button>`).join('');
+  box.querySelector('.masthead').after(nav);
+  nav.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-jump]');
+    if (!b) return;
+    // Instant on purpose: sections load while passing, and that cuts a smooth scroll short.
+    // Sections above can still grow as they load, so it re-aligns until the person scrolls.
+    const target = secs[Number(b.dataset.jump)];
+    let moved = false;
+    const mark = () => { moved = true; };
+    box.addEventListener('wheel', mark, { once: true, passive: true });
+    box.addEventListener('touchstart', mark, { once: true, passive: true });
+    target.scrollIntoView();
+    [400, 1200, 2500].forEach((ms) => setTimeout(() => { if (!moved && !box.hidden) target.scrollIntoView(); }, ms));
+  });
 }
 
 /* Chunav mode */
@@ -566,7 +663,11 @@ async function setChunav(on) {
   $('#chunavPanel').hidden = !on;
   $('#rolaPanel').hidden = on;
   $('.find').hidden = on;
+  showStatePins();
   if (on) {
+    ghoomo.leave();
+    if (!$('#dossier').hidden) { $('#dossier').hidden = true; state.current = null; }
+    go('');
     await loadChunav();
     state.layer.remove();
     chunav.layer.addTo(state.map);
@@ -581,6 +682,8 @@ async function setChunav(on) {
     chunav.layer?.remove();
     state.layer.addTo(state.map);
     if (!$('#dossier').hidden) closeDossier();
+    else go('');
+    showStatePins();
   }
 }
 
@@ -617,7 +720,9 @@ function seatFromGps() {
 
 function openSeat(no, place) {
   const s = chunav.seats[no];
+  go(`seat/${no}`);
   chunav.current = no;
+  $('#dossier').classList.remove('peek', 'sheet');
   store.set('seat', no);
   chunav.layer.setStyle(seatStyle);
   state.current = s.district;
@@ -655,7 +760,7 @@ function openSeat(no, place) {
   </header>
 
   <section class="sec sec-black">
-    <img src="img/10.jpg" alt="Poster: Aapna kya lena dena">
+    <img loading="lazy" src="img/10.jpg" alt="Poster: Aapna kya lena dena">
     <div><h2>Your MLA now</h2>
       <h3><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a></h3>
       <p class="lead">${m.vacant ? 'Wikipedia lists a bye-election as still to come for this seat.' : `${esc(pName(m.party))}${m.bye ? ', won a bye-election after 2022' : ''}. ${netaFacts(m)}.`}</p>
@@ -664,7 +769,7 @@ function openSeat(no, place) {
   </section>
 
   <section class="sec sec-amber">
-    <img src="img/15.jpg" alt="No U-turn road sign">
+    <img loading="lazy" src="img/15.jpg" alt="No U-turn road sign">
     <div><h2>Last fight, 2022</h2>
       <div class="big-margin">${s.margin.toLocaleString('en-IN')} votes</div>
       <p class="lead">That was the gap. ${rank <= 40 ? `Number ${rank} closest of 403 seats.` : `It ranks ${rank} of 403, where 1 is the closest.`} Turnout ${s.turnout}%.</p>
@@ -676,7 +781,7 @@ function openSeat(no, place) {
   </section>
 
   <section class="sec sec-paper">
-    <img src="img/18.jpg" alt="Wake up, on an old phone screen">
+    <img loading="lazy" src="img/18.jpg" alt="Wake up, on an old phone screen">
     <div><h2>Is your name on the list?</h2>
       <p class="lead"><b>Check even if you voted last time.</b> UP's voter list was redone in 2025 and 2026, and the final roll came out about 2 crore names shorter.</p>
       ${state.age && state.age < 18 ? '<p class="lead">You are under 18, so show this to someone who can vote.</p>' : ''}
@@ -689,7 +794,7 @@ function openSeat(no, place) {
   </section>
 
   <section class="sec sec-red">
-    <img src="img/12.jpg" alt="Film-style poster with a burning car">
+    <img loading="lazy" src="img/12.jpg" alt="Film-style poster with a burning car">
     <div><h2>Who's standing in 2027</h2>
       <div id="cands">Checking MyNeta…</div>
       <h3>Latest on this seat</h3><div id="seatNews">Loading…</div>
@@ -697,7 +802,9 @@ function openSeat(no, place) {
     </div>
   </section>`;
 
-  $('#closeBtn').addEventListener('click', () => { chunav.current = null; closeDossier(); if (chunav.on) chunav.layer.setStyle(seatStyle); });
+  $('#closeBtn').addEventListener('click', closeDossier);
+  addJumpNav(box);
+  box.focus({ preventScroll: true });
   $('#seatCity').addEventListener('click', () => { setChunav(false).then(() => openCity(s.district)); });
   api('candidates', {}).then((c) => {
     $('#cands').innerHTML = c.ready
@@ -729,6 +836,9 @@ function initChunav() {
 
 function openCity(name, origin) {
   const d = state.districts[name];
+  ghoomo.leave();
+  go(`city/${encodeURIComponent(name)}`);
+  $('#dossier').classList.remove('peek', 'sheet');
   state.current = name;
   state.origin = origin || { lat: d.lat, lng: d.lng };
   state.layer.setStyle(style);
@@ -773,7 +883,7 @@ function openCity(name, origin) {
   </header>
 
   <section class="sec sec-red" data-load="survive">
-    <img src="img/17.jpg" alt="Comic lettering: Ahhhhh!">
+    <img loading="lazy" src="img/17.jpg" alt="Comic lettering: Ahhhhh!">
     <div><h2>Survive today</h2>
       <dl class="now" id="now">Loading…</dl>
       <div class="help">${HELPLINES.map(([n, l]) => `<a href="tel:${n}"><b>${n}</b><span>${esc(l)}</span></a>`).join('')}</div>
@@ -787,7 +897,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-amber" data-load="news">
-    <img src="img/18.jpg" alt="Wake up, on an old phone screen">
+    <img loading="lazy" src="img/18.jpg" alt="Wake up, on an old phone screen">
     <div><h2>News in ${esc(search)}</h2><div id="news">Loading headlines…</div>
       <h3>Who has the rola in the headlines</h3>
       <p class="lead">Counts names in the last 30 days of headlines. This shows who the press writes about, which is different from who has support.</p>
@@ -799,7 +909,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-red" data-load="netas">
-    <img src="img/12.jpg" alt="Film-style poster with a burning car">
+    <img loading="lazy" src="img/12.jpg" alt="Film-style poster with a burning car">
     <div><h2>Netas</h2>
       <p class="lead">Their own 2022 election affidavits, collected by ADR on MyNeta. Declared cases are not convictions. Figures may have changed since.</p>
       <p><button class="action" id="toChunav" type="button">Find your seat in Chunav 2027</button></p>
@@ -810,7 +920,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-paper" data-load="lawyers">
-    <img src="img/10.jpg" alt="Poster: Aapna kya lena dena">
+    <img loading="lazy" src="img/10.jpg" alt="Poster: Aapna kya lena dena">
     <div><h2>Lawyers</h2>
       <p class="lead">Nobody publishes who wins the most, so nothing here is a ranking. These are mapped offices with listed numbers, real case news, and lawyers people actually recommend.</p>
       <p class="lead"><b>Free legal aid: call NALSA on 15100.</b> <a href="https://services.ecourts.gov.in/" target="_blank" rel="noopener">Check any lawyer's cases on eCourts</a>.</p>
@@ -826,7 +936,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-black" data-load="projects">
-    <img src="img/11.jpg" alt="Poster: Don't waste your time on these bakwass things">
+    <img loading="lazy" src="img/11.jpg" alt="Poster: Don't waste your time on these bakwass things">
     <div><h2>Your tax money</h2>
       ${projects.length ? projects.map((p) => `<div class="project"><b>${esc(p.name)}</b>${esc(p.cost)}${p.km ? `, ${esc(p.km)}` : ''}<br>
         <a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">Background</a>
@@ -842,7 +952,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-paper" data-load="papers">
-    <img src="img/15.jpg" alt="No U-turn road sign">
+    <img loading="lazy" src="img/15.jpg" alt="No U-turn road sign">
     <div><h2>No papers yet?</h2>
       ${PAPERS.map((p) => `<details class="paper-card" data-paper="${p.key}"><summary>${esc(p.title)}</summary>
         <p><b>Time:</b> ${esc(p.time)}</p><ol class="steps">${p.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
@@ -853,7 +963,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-red" data-load="underrated">
-    <img src="img/3.jpg" alt="Painted sign: Why not">
+    <img loading="lazy" src="img/3.jpg" alt="Painted sign: Why not">
     <div><h2>Underrated</h2>
       <p class="lead">Age ${esc(state.age || '?')} here, so you get ${AGE_COPY[ageBand()]}.</p>
       <div id="under">Loading…</div>
@@ -864,7 +974,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-black" data-load="origins">
-    <img src="img/19.jpg" alt="Title card: Directed by">
+    <img loading="lazy" src="img/19.jpg" alt="Title card: Directed by">
     <div><h2>Who comes from here</h2>
       <p class="lead">Birthplaces from Wikidata. Home addresses of living people stay off this site.</p>
       <h3>Actors</h3><div id="pActor">Loading…</div>
@@ -873,7 +983,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-paper" data-load="films">
-    <img src="img/1.jpg" alt="Black and white photo of a man with a cigarette">
+    <img loading="lazy" src="img/1.jpg" alt="Black and white photo of a man with a cigarette">
     <div><h2>Filmy</h2>
       <h3>Films shot or set here</h3><div id="films">Loading…</div>
       <h3>Stars around town, in the news</h3><div id="starNews">Loading…</div>
@@ -881,7 +991,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-green" data-load="culture">
-    <img src="img/16.jpg" alt="DJ road sign">
+    <img loading="lazy" src="img/16.jpg" alt="DJ road sign">
     <div><h2>Sound, art, history</h2>
       <div id="wiki">Loading…</div>
       ${MUSIC[name] ? `<h3>Music from here</h3><p>${esc(MUSIC[name])}</p>` : ''}
@@ -894,7 +1004,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-paper" data-load="food">
-    <img src="img/13.jpg" alt="Poster: Please don't kill my vibe">
+    <img loading="lazy" src="img/13.jpg" alt="Poster: Please don't kill my vibe">
     <div><h2>Where people eat</h2>
       <h3>Restaurants nearby</h3><div id="eat">Loading…</div>
       <h3>Famous, per Reddit</h3><div id="eatReddit">Loading…</div>
@@ -903,7 +1013,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-green" data-load="fashion">
-    <img src="img/14.jpg" alt="Poster: Keep fashion weird">
+    <img loading="lazy" src="img/14.jpg" alt="Poster: Keep fashion weird">
     <div><h2>Kapde</h2>
       <h3>Bazaars, tailors, clothes shops</h3><div id="fashion">Loading…</div>
       <h3>What Reddit says</h3><div id="fashionReddit">Loading…</div>
@@ -911,7 +1021,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-black" data-load="rich">
-    <img src="img/2.jpg" alt="Playing card: No pressure, no diamonds">
+    <img loading="lazy" src="img/2.jpg" alt="Playing card: No pressure, no diamonds">
     <div><h2>Old money</h2>
       <h3>Companies based here</h3><div id="companies">Loading…</div>
       <h3>Richest MLAs by their own affidavit</h3>
@@ -922,7 +1032,7 @@ function openCity(name, origin) {
   </section>
 
   <section class="sec sec-amber" data-load="cars">
-    <img src="img/20.jpg" alt="Black SUV with tinted windows">
+    <img loading="lazy" src="img/20.jpg" alt="Black SUV with tinted windows">
     <div><h2>Big cars</h2>
       <p class="lead">Type a plate to see where it was registered. Owner lookups stay out: tying a plate to a person is how people get stalked.</p>
       <div class="plate"><input id="plateIn" aria-label="Number plate" placeholder="UP32 AB 1234" maxlength="13"><output id="plateOut"></output></div>
@@ -932,13 +1042,15 @@ function openCity(name, origin) {
   </section>`;
 
   $('#closeBtn').addEventListener('click', closeDossier);
+  addJumpNav(box);
+  box.focus({ preventScroll: true });
   box.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => runQuick(QUICK.find((q) => q.id === b.dataset.q), b)));
 
   $('#plateIn').addEventListener('input', (e) => {
     const m = e.target.value.toUpperCase().match(/^UP\s*(\d{2})/);
     $('#plateOut').textContent = !m ? (e.target.value.length > 3 ? 'Not a UP plate' : '') : RTO[Number(m[1])] ? `Registered at the ${RTO[Number(m[1])]} RTO` : 'Unknown UP code';
   });
-  $('#toChunav').addEventListener('click', () => { box.hidden = true; state.current = null; setChunav(true); });
+  $('#toChunav').addEventListener('click', () => setChunav(true));
   $('#lawyerName').addEventListener('input', (e) => {
     const n = e.target.value.trim();
     $('#lawyerGo').href = n ? `https://indiankanoon.org/search/?formInput=${encodeURIComponent(`"${n}" doctypes:allahabad`)}` : 'https://indiankanoon.org/';
@@ -996,17 +1108,17 @@ function openCity(name, origin) {
       newsBlock($('#vipNews'), `${search} VIP number auction car registration`);
     },
     lawyers: async () => {
+      tabs($('#lawCats'), LAW_CATS.map((c) => [c.label, c.label]), (id, body) => {
+        const c = LAW_CATS.find((x) => x.label === id);
+        body.innerHTML = `<div class="lookup"><a href="${mapsUrl(`${c.maps} ${search}`)}" target="_blank" rel="noopener">Numbers and reviews on Google Maps</a></div><div class="law-news">Loading…</div>`;
+        newsBlock($('.law-news', body), `${search} ${c.q}`);
+      });
       try {
         const list = await places(['lawyer'], 20000);
         const slot = $('#lawyers');
         slot.innerHTML = named(list).length ? placeList(list) : hasNoResults('lawyers');
         wirePlaces(slot, list);
       } catch (err) { $('#lawyers').innerHTML = failed('lawyers', err); }
-      tabs($('#lawCats'), LAW_CATS.map((c) => [c.label, c.label]), (id, body) => {
-        const c = LAW_CATS.find((x) => x.label === id);
-        body.innerHTML = `<div class="lookup"><a href="${mapsUrl(`${c.maps} ${search}`)}" target="_blank" rel="noopener">Numbers and reviews on Google Maps</a></div><div class="law-news">Loading…</div>`;
-        newsBlock($('.law-news', body), `${search} ${c.q}`);
-      });
       newsBlock($('#lawNews'), `${search} advocate case against MLA court`);
       redditBlock($('#lawReddit'), `lawyer advocate ${search}`);
       peopleBlock($('#lawPeople'), 'lawyer');
@@ -1057,6 +1169,13 @@ function openCity(name, origin) {
   }), { root: box, rootMargin: '200px' });
   box.querySelectorAll('[data-load]').forEach((s) => state.io.observe(s));
 }
+
+const ghoomo = initGhoomo({
+  $, esc, state, store, api, dirLink, pinIcon, go, keepMapClear, showStatePins, style,
+  closeDossier: () => closeDossier(),
+  // Ghoomo draws on the district map, so Chunav's seat layer has to step aside first
+  enterGhoomo: async () => { if (chunav.on) await setChunav(false); state.current = null; state.newsPins?.clearLayers(); state.pins?.clearLayers(); state.layer?.setStyle(style); },
+});
 
 intro();
 initMap();

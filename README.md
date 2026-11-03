@@ -33,6 +33,10 @@ Then open http://localhost:4173.
 | Famous people | Wikidata, by birthplace | Yes, cached 10 minutes |
 | Projects | Press-reported totals in `public/js/content.js`, with live news | Totals fixed |
 
+## Ghoomo
+
+Nine niche pages, most of them hand-collected: Samay slider (Esri Wayback imagery back to 2014), Tune the TV (Radio Browser), Sirf is mausam mein, Bhojan by train, Naak ka naksha, Bhasha slider, Aakhri karigar, Plate bingo and Ajeeb gaon. Hand-collected entries live in `public/js/ghoomo-data.js` and have not been checked on the ground. Dialect lines still need native speakers.
+
 ## What it leaves out on purpose
 
 - Home addresses of actors, politicians or anyone else. People are shown by birthplace only.
