@@ -1,4 +1,4 @@
-import { PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
+import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -436,14 +436,15 @@ async function moneyBlock(el, place) {
 }
 
 /* Netas */
-const mynetaUrl = (id) => `https://www.myneta.info/uttarpradesh2022/candidate.php?candidate_id=${Number(id)}`;
+const mynetaUrl = (id) => (id ? `https://www.myneta.info/uttarpradesh2022/candidate.php?candidate_id=${Number(id)}` : 'https://www.myneta.info/uttarpradesh2022/');
+const netaFacts = (m) => (m.vacant ? 'bye-election pending' : m.cases == null ? 'no 2022 affidavit in this data, check MyNeta' : `${m.cases} declared ${m.cases === 1 ? 'case' : 'cases'}, assets ${m.assets == null ? 'on MyNeta' : fmtCr(m.assets / 1e7)}, ${esc(m.edu)}`);
 function netaList(name) {
   const list = state.netas[name] || [];
   if (!list.length) return '<p class="empty">No MLA record for this district.</p>';
   const withCases = list.filter((m) => m.cases).length;
-  return `<p class="neta-sum">${list.length} MLAs. ${withCases} of them declared criminal cases in their own affidavits.</p>
+  return `<p class="neta-sum">${list.length} seats. ${withCases} MLAs declared criminal cases in their own affidavits.</p>
     <ul class="list">${list.map((m) => { const k = partyKey(m.party); return `<li><i class="neta-party" style="background:${PARTIES[k]?.color || '#777'}"></i><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a>, ${esc(m.seat)}${m.bye ? ' (bye-election)' : ''}
-      <span class="meta">${esc(PARTIES[k]?.name || m.party)}, ${m.cases} declared ${m.cases === 1 ? 'case' : 'cases'}, assets ${m.assets == null ? 'on MyNeta' : fmtCr(m.assets / 1e7)}, ${esc(m.edu)}</span></li>`; }).join('')}</ul>`;
+      <span class="meta">${esc(PARTIES[k]?.name || m.party)}, ${netaFacts(m)}</span></li>`; }).join('')}</ul>`;
 }
 
 /* Wikipedia, Wikidata lists */
@@ -474,6 +475,257 @@ async function nearbyBlock(el) {
 
 /* Dossier */
 const loader = (fn) => ({ fn, done: false });
+
+function closeDossier() {
+  $('#dossier').hidden = true;
+  state.current = null;
+  state.newsPins.clearLayers();
+  showStatePins();
+  state.layer.setStyle(style);
+}
+
+/* Chunav mode */
+const CLOSE_BINS = [{ max: 2000, color: '#ff1f1f', label: 'Under 2,000 votes' }, { max: 5000, color: '#ff8a00', label: '2,000 to 5,000' }, { max: 15000, color: '#ffd400', label: '5,000 to 15,000' }, { max: Infinity, color: '#e8e4d8', label: 'Over 15,000' }];
+const chunav = { on: false, seats: null, geo: null, layer: null, view: 'party', current: null };
+const DAY = 86400000;
+const daysTo = (iso) => Math.ceil((new Date(`${iso}T00:00:00+05:30`) - Date.now()) / DAY);
+
+// Words change with the calendar: expected window, announced polling, counting day, after results.
+function chunavClock() {
+  const { countDate, pollDates, windowStart, expected } = ELECTION;
+  if (countDate) {
+    const left = daysTo(countDate);
+    if (left > 0) return { big: `${left} ${left === 1 ? 'day' : 'days'} to results`, small: pollDates.length ? `Polling from ${pollDates[0]}, counting ${countDate}` : `Counting ${countDate}` };
+    return { big: left === 0 ? 'Results day' : 'Results are out', small: 'Open this for the Election Commission results.', results: true };
+  }
+  const left = daysTo(windowStart);
+  return { big: left > 0 ? `About ${left} days` : 'Any day now', small: `Expected ${expected}. The Election Commission has not announced dates.` };
+}
+
+function seatStyle(f) {
+  const s = chunav.seats[f.properties.no];
+  const fill = chunav.view === 'party' ? PARTIES[s.party]?.color || '#777' : CLOSE_BINS.find((b) => s.margin < b.max).color;
+  const on = chunav.current === s.no;
+  const near = state.map.getZoom() >= 11;
+  return { fillColor: fill, fillOpacity: near ? 0.12 : on ? 0.85 : 0.6, color: on ? '#fff' : '#000', weight: on ? 3 : 0.6 };
+}
+
+function seatLegend() {
+  const items = chunav.view === 'party'
+    ? ['BJP', 'SP', 'ADS', 'RLD', 'SBSP', 'NISHAD', 'INC', 'JDL', 'BSP'].map((k) => [PARTIES[k].color, PARTIES[k].name])
+    : CLOSE_BINS.map((b) => [b.color, b.label]);
+  $('#seatLegend').innerHTML = items.map(([c, l]) => `<div><i style="background:${c}"></i>${esc(l)}</div>`).join('');
+}
+
+async function loadChunav() {
+  if (chunav.seats) return;
+  const [seats, geo] = await Promise.all(['data/seats.json', 'data/seats.geojson'].map((u) => fetch(u).then((r) => r.json())));
+  chunav.seats = seats;
+  chunav.geo = geo;
+  chunav.layer = L.geoJSON(geo, {
+    renderer: L.canvas(), // 403 shapes are slow as SVG on phones
+    style: seatStyle,
+    onEachFeature(f, layer) {
+      const s = seats[f.properties.no];
+      layer.bindTooltip(() => `<b>${esc(s.name)}</b>${esc(s.mla.name)}<br>2022: ${esc(PARTIES[s.party]?.name || s.party)} by ${s.margin.toLocaleString('en-IN')} votes`, { sticky: true, className: 'dist-tip' });
+      // Rings inside a seat are stored as polygons, so the click goes by position
+      layer.on('click', (e) => { const no = seatAt(e.latlng.lat, e.latlng.lng); if (no) openSeat(no); });
+    },
+  });
+  state.map.on('zoomend', () => { if (chunav.on) chunav.layer.setStyle(seatStyle); });
+
+  const list = Object.values(seats);
+  $('#seatPick').insertAdjacentHTML('beforeend', [...list].sort((a, b) => a.name.localeCompare(b.name)).map((s) => `<option value="${s.no}">${esc(s.name)}, ${esc(s.district)}</option>`).join(''));
+  const tally = {};
+  list.forEach((s) => { tally[s.party] = (tally[s.party] || 0) + 1; });
+  $('#seatTally').innerHTML = Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([p, n]) => `<i style="width:${(100 * n) / list.length}%;background:${PARTIES[p]?.color || '#777'}" title="${esc(PARTIES[p]?.name || p)}: ${n}"></i>`).join('');
+  $('#seatTally').setAttribute('role', 'img');
+  $('#seatTally').setAttribute('aria-label', `2022 result, 202 seats needed for a majority. ${Object.entries(tally).map(([p, n]) => `${p} ${n}`).join(', ')}`);
+  $('#closeSeats').innerHTML = [...list].sort((a, b) => a.margin - b.margin).slice(0, 10).map((s) => `<li><button data-seat="${s.no}">${esc(s.name)}</button>, ${s.margin.toLocaleString('en-IN')} votes</li>`).join('');
+  $('#closeSeats').querySelectorAll('[data-seat]').forEach((b) => b.addEventListener('click', () => openSeat(Number(b.dataset.seat))));
+}
+
+function seatAt(lat, lng) {
+  let best = null;
+  let bestSize = Infinity;
+  chunav.geo.features.forEach((f) => {
+    f.geometry.coordinates.forEach((poly) => {
+      if (!inRing(lng, lat, poly[0])) return;
+      const xs = poly[0].map((p) => p[0]);
+      const ys = poly[0].map((p) => p[1]);
+      const size = (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+      if (size < bestSize) { bestSize = size; best = f.properties.no; }
+    });
+  });
+  return best;
+}
+
+async function setChunav(on) {
+  chunav.on = on;
+  $('#chunavBtn').setAttribute('aria-pressed', on);
+  $('#chunavPanel').hidden = !on;
+  $('#rolaPanel').hidden = on;
+  $('.find').hidden = on;
+  if (on) {
+    await loadChunav();
+    state.layer.remove();
+    chunav.layer.addTo(state.map);
+    chunav.layer.setStyle(seatStyle);
+    seatLegend();
+    const saved = Number(store.get('seat'));
+    if (saved && chunav.seats[saved]) $('#seatHits').innerHTML = `<button data-saved>Your seat: <b>${esc(chunav.seats[saved].name)}</b></button>`;
+    $('[data-saved]')?.addEventListener('click', () => openSeat(saved));
+    if (chunavClock().results) $('#seatHits').insertAdjacentHTML('afterbegin', `<p><a href="${ELECTION.results}" target="_blank" rel="noopener"><b>See results on the Election Commission site</b></a></p>`);
+  } else {
+    chunav.current = null;
+    chunav.layer?.remove();
+    state.layer.addTo(state.map);
+    if (!$('#dossier').hidden) closeDossier();
+  }
+}
+
+async function findSeat(e) {
+  e.preventDefault();
+  const q = $('#seatQ').value.trim();
+  const hits = $('#seatHits');
+  if (!q) return;
+  hits.textContent = 'Looking…';
+  try {
+    const places2 = await api('geocode', { q });
+    const found = places2.map((p) => ({ ...p, no: seatAt(p.lat, p.lng) })).filter((p) => p.no);
+    if (!found.length) { hits.textContent = 'No place by that name in UP. Try a nearby town or pick a seat below.'; return; }
+    hits.innerHTML = found.map((p, i) => `<button data-hit="${i}">${esc(p.name)}<small>${esc(p.label)}${p.label ? ', ' : ''}${esc(chunav.seats[p.no].name)} seat</small></button>`).join('');
+    hits.querySelectorAll('[data-hit]').forEach((b) => b.addEventListener('click', () => {
+      const p = found[Number(b.dataset.hit)];
+      openSeat(p.no, p);
+    }));
+  } catch (err) { hits.textContent = `Search failed: ${err.message}. Pick a seat below instead.`; }
+}
+
+function seatFromGps() {
+  const hits = $('#seatHits');
+  if (!navigator.geolocation) { hits.textContent = 'This browser has no location. Type your area instead.'; return; }
+  hits.textContent = 'Finding you…';
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const no = seatAt(lat, lng);
+    if (!no) { hits.textContent = 'You are outside Uttar Pradesh. Type your area instead.'; return; }
+    hits.textContent = '';
+    openSeat(no, { lat, lng, name: 'You are here' });
+  }, () => { hits.textContent = 'Location was blocked. Type your area instead.'; }, { timeout: 10000 });
+}
+
+function openSeat(no, place) {
+  const s = chunav.seats[no];
+  chunav.current = no;
+  store.set('seat', no);
+  chunav.layer.setStyle(seatStyle);
+  state.current = s.district;
+  state.pins.clearLayers();
+  state.newsPins.clearLayers();
+  showStatePins();
+  $('#seatPick').value = no;
+  if (place) L.marker([place.lat, place.lng], { icon: pinIcon('hot') }).addTo(state.pins).bindPopup(esc(place.name));
+
+  const box = $('#dossier');
+  box.hidden = false;
+  box.scrollTop = 0;
+  const shape = chunav.layer.getLayers().find((l) => l.feature.properties.no === no);
+  if (shape) state.map.flyToBounds(shape.getBounds(), { paddingBottomRight: [innerWidth <= 860 ? 0 : box.offsetWidth, 0], maxZoom: 12 });
+
+  const list = Object.values(chunav.seats).sort((a, b) => a.margin - b.margin);
+  const rank = list.findIndex((x) => x.no === no) + 1;
+  const pName = (p) => PARTIES[NETA_PARTY[p] || p]?.name || p;
+  const pColour = (p) => PARTIES[NETA_PARTY[p] || p]?.color || '#777';
+  const m = s.mla;
+  const top = Math.max(s.votes, s.runnerVotes);
+  const clock = chunavClock();
+  const search = `${s.name} ${s.district}`;
+
+  box.innerHTML = `
+  <button class="close" id="closeBtn" aria-label="Close seat page">X</button>
+  <header class="masthead">
+    <h1 class="city-en">${esc(s.name)}</h1>
+    <dl class="facts">
+      <div><dt>Assembly seat</dt><dd>No. ${s.no}${s.reserved ? `, reserved ${esc(s.reserved)}` : ''}</dd></div>
+      <div><dt>District</dt><dd><button class="link-btn on-red" id="seatCity" type="button">${esc(s.district)}</button></dd></div>
+      <div><dt>Lok Sabha seat</dt><dd>${esc(s.lokSabha)}</dd></div>
+      <div><dt>Chunav 2027</dt><dd>${esc(clock.big)}</dd></div>
+    </dl>
+  </header>
+
+  <section class="sec sec-black">
+    <img src="img/10.jpg" alt="Poster: Aapna kya lena dena">
+    <div><h2>Your MLA now</h2>
+      <h3><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a></h3>
+      <p class="lead">${m.vacant ? 'Wikipedia lists a bye-election as still to come for this seat.' : `${esc(pName(m.party))}${m.bye ? ', won a bye-election after 2022' : ''}. ${netaFacts(m)}.`}</p>
+      <p class="muted">Their own 2022 affidavit, collected by ADR on MyNeta. Declared cases are not convictions.</p>
+    </div>
+  </section>
+
+  <section class="sec sec-amber">
+    <img src="img/15.jpg" alt="No U-turn road sign">
+    <div><h2>Last fight, 2022</h2>
+      <div class="big-margin">${s.margin.toLocaleString('en-IN')} votes</div>
+      <p class="lead">That was the gap. ${rank <= 40 ? `Number ${rank} closest of 403 seats.` : `It ranks ${rank} of 403, where 1 is the closest.`} Turnout ${s.turnout}%.</p>
+      <div class="fight">
+        <div><small><b>${esc(s.winner)}</b>, ${esc(pName(s.party))}: ${s.votes.toLocaleString('en-IN')} (${s.pct}%)</small><div class="fight-bar" style="width:${(100 * s.votes) / top}%;background:${pColour(s.party)}"></div></div>
+        <div><small><b>${esc(s.runner)}</b>, ${esc(pName(s.runnerParty))}: ${s.runnerVotes.toLocaleString('en-IN')} (${s.runnerPct}%)</small><div class="fight-bar" style="width:${(100 * s.runnerVotes) / top}%;background:${pColour(s.runnerParty)}"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec-paper">
+    <img src="img/18.jpg" alt="Wake up, on an old phone screen">
+    <div><h2>Is your name on the list?</h2>
+      <p class="lead"><b>Check even if you voted last time.</b> UP's voter list was redone in 2025 and 2026, and the final roll came out about 2 crore names shorter.</p>
+      ${state.age && state.age < 18 ? '<p class="lead">You are under 18, so show this to someone who can vote.</p>' : ''}
+      <ol class="vote-steps">
+        <li><a href="${ELECTION.roll}" target="_blank" rel="noopener">Search your name on the voter list</a>. The result also names your polling booth.</li>
+        <li>Not there? <a href="${ELECTION.form6}" target="_blank" rel="noopener">File Form 6 on the voter portal</a>, or ask your booth level officer.</li>
+        <li>Stuck? Call the voter helpline on <a href="tel:${ELECTION.helpline}">${ELECTION.helpline}</a>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sec sec-red">
+    <img src="img/12.jpg" alt="Film-style poster with a burning car">
+    <div><h2>Who's standing in 2027</h2>
+      <div id="cands">Checking MyNeta…</div>
+      <h3>Latest on this seat</h3><div id="seatNews">Loading…</div>
+      <h3>UP election news</h3><div id="upNews">Loading…</div>
+    </div>
+  </section>`;
+
+  $('#closeBtn').addEventListener('click', () => { chunav.current = null; closeDossier(); if (chunav.on) chunav.layer.setStyle(seatStyle); });
+  $('#seatCity').addEventListener('click', () => { setChunav(false).then(() => openCity(s.district)); });
+  api('candidates', {}).then((c) => {
+    $('#cands').innerHTML = c.ready
+      ? `<p class="lead"><a href="${safeUrl(c.url)}" target="_blank" rel="noopener">Candidate affidavits are up on MyNeta</a>. Compare their assets with the 2022 figures here.</p>`
+      : '<p class="lead">Nobody official yet. Candidates file affidavits after the schedule is announced, and this box links to them as soon as MyNeta opens its 2027 page.</p>';
+  }).catch(() => { $('#cands').innerHTML = '<p class="lead">Could not reach MyNeta. <a href="https://www.myneta.info/" target="_blank" rel="noopener">Check it yourself</a>.</p>'; });
+  newsBlock($('#seatNews'), `"${s.name}" ${s.district} MLA OR vidhan sabha OR assembly OR 2027`);
+  newsBlock($('#upNews'), 'Uttar Pradesh assembly election 2027 when:7d');
+}
+
+function initChunav() {
+  const paint = () => {
+    const c = chunavClock();
+    $('#chunavClock').textContent = `${c.big}. ${c.small}`;
+  };
+  paint();
+  setInterval(paint, 3600000);
+  $('#chunavBtn').addEventListener('click', () => setChunav(!chunav.on));
+  $('#seatForm').addEventListener('submit', findSeat);
+  $('#seatGps').addEventListener('click', seatFromGps);
+  $('#seatPick').addEventListener('change', (e) => { if (e.target.value) openSeat(Number(e.target.value)); });
+  document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+    chunav.view = b.dataset.view;
+    document.querySelectorAll('[data-view]').forEach((x) => x.setAttribute('aria-checked', x === b));
+    chunav.layer.setStyle(seatStyle);
+    seatLegend();
+  }));
+}
 
 function openCity(name, origin) {
   const d = state.districts[name];
@@ -550,6 +802,7 @@ function openCity(name, origin) {
     <img src="img/12.jpg" alt="Film-style poster with a burning car">
     <div><h2>Netas</h2>
       <p class="lead">Their own 2022 election affidavits, collected by ADR on MyNeta. Declared cases are not convictions. Figures may have changed since.</p>
+      <p><button class="action" id="toChunav" type="button">Find your seat in Chunav 2027</button></p>
       <div id="netaList">${netaList(name)}</div>
       <h3>Party offices on the map</h3><div id="partyOffices">Loading…</div>
       <h3>Netas in the news</h3><div id="netaNews">Loading…</div>
@@ -678,13 +931,14 @@ function openCity(name, origin) {
     </div>
   </section>`;
 
-  $('#closeBtn').addEventListener('click', () => { box.hidden = true; state.current = null; state.newsPins.clearLayers(); showStatePins(); state.layer.setStyle(style); });
+  $('#closeBtn').addEventListener('click', closeDossier);
   box.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => runQuick(QUICK.find((q) => q.id === b.dataset.q), b)));
 
   $('#plateIn').addEventListener('input', (e) => {
     const m = e.target.value.toUpperCase().match(/^UP\s*(\d{2})/);
     $('#plateOut').textContent = !m ? (e.target.value.length > 3 ? 'Not a UP plate' : '') : RTO[Number(m[1])] ? `Registered at the ${RTO[Number(m[1])]} RTO` : 'Unknown UP code';
   });
+  $('#toChunav').addEventListener('click', () => { box.hidden = true; state.current = null; setChunav(true); });
   $('#lawyerName').addEventListener('input', (e) => {
     const n = e.target.value.trim();
     $('#lawyerGo').href = n ? `https://indiankanoon.org/search/?formInput=${encodeURIComponent(`"${n}" doctypes:allahabad`)}` : 'https://indiankanoon.org/';
@@ -806,3 +1060,4 @@ function openCity(name, origin) {
 
 intro();
 initMap();
+initChunav();

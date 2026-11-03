@@ -355,7 +355,25 @@ async function locality(params) {
   return { name: p?.district || p?.locality || p?.suburb || p?.name || null, city: p?.city || null };
 }
 
-const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality };
+// Search for a place inside Uttar Pradesh
+async function geocode({ q }) {
+  if (!q || q.length < 2) throw new Error('type a place name');
+  const url = `https://photon.komoot.io/api/?limit=6&bbox=77,23.8,84.7,30.5&q=${encodeURIComponent(q)}`;
+  return JSON.parse(await queued(() => get(url))).features
+    .filter((f) => !f.properties.state || /uttar pradesh/i.test(f.properties.state))
+    .map((f) => {
+      const p = f.properties;
+      return { name: p.name || q, label: [p.district || p.locality, p.city, p.county].filter(Boolean).join(', '), lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] };
+    });
+}
+
+// MyNeta opens a folder per election. Its missing page still answers 200.
+async function candidates() {
+  const html = await get('https://www.myneta.info/uttarpradesh2027/');
+  return { ready: !/Page Not Found/i.test(html), url: 'https://www.myneta.info/uttarpradesh2027/' };
+}
+
+const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');

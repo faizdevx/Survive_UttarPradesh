@@ -18,7 +18,8 @@ Then open http://localhost:4173.
 | --- | --- | --- |
 | Satellite map | Esri World Imagery | Yes |
 | Party layer | 2024 Lok Sabha results, from Wikipedia | Refreshed by `npm run build:data` |
-| MLAs, declared cases and assets | MyNeta/ADR affidavits from 2022 and later bye-elections. 398 of 403 seats parsed | Refreshed by `node scripts/build-netas.mjs` |
+| MLAs, declared cases and assets | MyNeta/ADR affidavits from 2022, with later bye-election winners from Wikipedia | Refreshed by `node scripts/build-netas.mjs`, then `node scripts/build-seats.mjs` |
+| Chunav mode seats | Boundaries by [DataMeet](https://github.com/datameet/maps/tree/master/assembly-constituencies) ([CC BY 2.5 IN](http://creativecommons.org/licenses/by/2.5/in/)). 2022 votes and margins from Wikipedia | Refreshed by `node scripts/build-seats.mjs` |
 | Weather and air quality | Open-Meteo | Yes |
 | Landmarks near you | Wikipedia geosearch | Yes, cached 10 minutes |
 | Events, films, companies | Wikidata | Yes, cached 10 minutes |

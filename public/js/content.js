@@ -11,6 +11,13 @@ export const PARTIES = {
   SBSP: { name: 'SBSP', color: '#E8C91E' },
   NISHAD: { name: 'NISHAD Party', color: '#12A5A0' },
   JDL: { name: 'Jansatta Dal (L)', color: '#B5651D' },
+  Vacant: { name: 'Vacant', color: '#777' },
+};
+
+// Fill in polling and counting once the Election Commission announces them. Until then the site only says "expected".
+export const ELECTION = {
+  expected: 'February to March 2027', windowStart: '2027-02-01', pollDates: [], countDate: null,
+  roll: 'https://electoralsearch.eci.gov.in/', form6: 'https://voters.eci.gov.in/', results: 'https://results.eci.gov.in/', helpline: '1950',
 };
 
 // MyNeta spells some parties in full

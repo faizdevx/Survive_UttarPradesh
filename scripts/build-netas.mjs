@@ -54,7 +54,7 @@ for (const row of html.split(/<a href=\/?(?:uttarpradesh2022\/)?candidate\.php\?
   if (at >= 0) list.splice(at, 1);
   list.push({
     seat: title(m[3].replace(/:.*$/, '').replace(/\s*\(SC\)|\s*\(ST\)/, '')).trim(),
-    name: m[2].trim(), party: m[4].trim(), cases: Number(m[5].replace(/\D/g, '')) || 0,
+    name: m[2].trim(), party: m[4].trim(), cases: Number(m[5].replace(/<[^>]+>/g, '').replace(/\D/g, '')) || 0,
     edu: m[6].trim(), assets: assets ? Number(assets[1].replace(/,/g, '')) : null,
     id: Number(m[1]), bye: bye || undefined,
   });

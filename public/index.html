@@ -43,6 +43,25 @@
   <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
 
   <section class="rola" id="rola">
+    <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
+    <div id="chunavPanel" class="chunav-panel" hidden>
+      <form id="seatForm" class="seat-form">
+        <label for="seatQ">Your area, find your seat</label>
+        <div><input id="seatQ" autocomplete="off" placeholder="Hazratganj, Lucknow"><button type="submit">Find</button></div>
+      </form>
+      <button id="seatGps" class="link-btn" type="button">Use my location</button>
+      <select id="seatPick" aria-label="Choose a seat"><option value="">Or pick a seat</option></select>
+      <div id="seatHits" role="status"></div>
+      <div class="switch two" role="radiogroup" aria-label="Seat colours">
+        <button role="radio" aria-checked="true" data-view="party">Who won 2022</button>
+        <button role="radio" aria-checked="false" data-view="close">How close</button>
+      </div>
+      <div id="seatLegend" class="legend"></div>
+      <div id="seatTally" class="tally"></div>
+      <details class="wall"><summary>10 closest seats of 2022</summary><ol id="closeSeats" class="close-seats"></ol></details>
+      <p class="note">Boundaries are approximate. Confirm your seat on the Election Commission's voter search.</p>
+    </div>
+    <div id="rolaPanel">
     <h2>Rola kiska?</h2>
     <div class="switch" role="radiogroup" aria-label="Map layer">
       <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
@@ -63,6 +82,7 @@
         <img src="img/9.jpg" alt="Press photo of a politician in a red cap">
       </div>
     </details>
+    </div>
   </section>
 
   <div class="find">
