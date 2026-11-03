@@ -84,12 +84,18 @@ const decode = (s = '') => s
 const tag = (block, name) => decode(block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))?.[1] || '');
 const strip = (s) => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-async function cached(key, fn) {
+async function cached(key, fn, ttl = TTL) {
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < TTL) return hit.value;
-  const value = await fn();
-  cache.set(key, { at: Date.now(), value });
-  return value;
+  if (hit && Date.now() - hit.at < ttl) return hit.value;
+  try {
+    const value = await fn();
+    cache.set(key, { at: Date.now(), value });
+    return value;
+  } catch (err) {
+    // An old answer beats none when a source has a bad minute
+    if (hit) return hit.value;
+    throw err;
+  }
 }
 
 async function get(url, init = {}) {
@@ -404,7 +410,42 @@ async function radio() {
     .filter((s) => s.url?.startsWith('https://') && !seen.has(s.name.toLowerCase()) && seen.add(s.name.toLowerCase()));
 }
 
-const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
+// Forecast visibility alone misses most fog here: in a test across all districts, 95 of 105 calm
+// hours near saturation still read 2 km or more. So near-saturated calm air also raises the risk.
+function fogLevel({ vis, temp, rh, gap, wind, hour, month }) {
+  const foggyMonths = month >= 10 || month <= 3;
+  const night = hour >= 20 || hour <= 10;
+  const air = foggyMonths && night && temp < 24;
+  if (vis < 200 || (air && gap <= 0.5 && rh >= 97 && wind <= 6)) return 3;
+  if (vis < 500 || (air && gap <= 1 && rh >= 95 && wind <= 8)) return 2;
+  if (vis < 1000 || (air && gap <= 2 && rh >= 90 && wind <= 10)) return 1;
+  return 0;
+}
+
+async function kohra() {
+  const list = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/districts.json')))).filter((d) => d.lat != null);
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${list.map((d) => d.lat).join(',')}&longitude=${list.map((d) => d.lng).join(',')}&hourly=visibility,temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,wind_speed_10m&forecast_days=3&timezone=Asia%2FKolkata`;
+  const all = JSON.parse(await get(url));
+  // Open-Meteo gives India time without an offset, so "now" has to be worked out the same way
+  const now = new Date(Date.now() + 5.5 * 3600000).toISOString().slice(0, 13);
+  const first = Math.max(0, all[0].hourly.time.findIndex((t) => t.slice(0, 13) === now));
+  const pick = (a) => a.slice(first, first + 48);
+  const d = {};
+  list.forEach((x, i) => {
+    const h = all[i].hourly;
+    const levels = pick(h.time).map((t, k) => fogLevel({
+      vis: pick(h.visibility)[k], temp: pick(h.temperature_2m)[k], rh: pick(h.relative_humidity_2m)[k],
+      gap: pick(h.temperature_2m)[k] - pick(h.dew_point_2m)[k], wind: pick(h.wind_speed_10m)[k],
+      hour: Number(t.slice(11, 13)), month: Number(t.slice(5, 7)),
+    }));
+    d[x.name] = { f: levels.join(''), t: pick(h.temperature_2m).map(Math.round), a: pick(h.apparent_temperature).map(Math.round), v: pick(h.visibility).map((v) => Math.round(v / 100) / 10) };
+  });
+  return { at: new Date().toISOString(), hours: pick(all[0].hourly.time), d };
+}
+
+const TTLS = { kohra: 60 * 60 * 1000 };
+
+const API = { kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -415,7 +456,7 @@ const server = http.createServer(async (req, res) => {
     if (!fn) { res.writeHead(404); return res.end('{"error":"no such route"}'); }
     try {
       const params = Object.fromEntries(url.searchParams);
-      const value = await cached(`${route[1]}:${url.search}`, () => fn(params));
+      const value = await cached(`${route[1]}:${url.search}`, () => fn(params), TTLS[route[1]]);
       return res.end(JSON.stringify(value));
     } catch (err) {
       res.writeHead(502);

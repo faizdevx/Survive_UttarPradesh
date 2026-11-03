@@ -1,7 +1,9 @@
 import { RTO, PARTIES } from './content.js';
+import { LEVELS, ROADS, RAILS, seasonNow, loadKohra, nextMorning, nextPeak, worstFog, peakTemp, looLevel, headline } from './kohra.js';
 import { SAMAY_SPOTS, TRAIN_ROUTES, SEASON_FOOD, SMELLS, DIALECTS, KARIGAR } from './ghoomo-data.js';
 
 const PAGES = [
+  { key: 'kohra', title: 'Kohra meter', line: 'Fog and loo risk, next 48 hours', colour: 'paper' },
   { key: 'samay', title: 'Samay slider', line: 'Drag the satellite back to 2014', colour: 'red' },
   { key: 'radio', title: 'Tune the TV', line: 'Local radio on the old set', colour: 'amber' },
   { key: 'mausam', title: 'Sirf is mausam mein', line: 'Food that exists only right now', colour: 'green' },
@@ -395,7 +397,147 @@ export function initGhoomo(ctx) {
     } catch (err) { $('#ajList').innerHTML = `<p class="empty">Could not load the list: ${esc(err.message)}.</p>`; }
   }
 
-  const RUN = { hub, samay, radio, mausam, train, naak, bhasha, karigar, plate, ajeeb };
+  /* Kohra meter */
+  async function kohra() {
+    shell('Kohra meter', '<div class="g-pad" id="kBody">Checking the next 48 hours…</div>');
+    let data;
+    try { data = await loadKohra(); } catch (err) {
+      const el = $('#kBody');
+      if (el) el.innerHTML = `<p class="empty">Could not load the forecast: ${esc(err.message)}. Try again in a minute. For official warnings see <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">IMD</a>.</p>`;
+      return;
+    }
+    if (!$('#kBody')) return;
+    let mode = seasonNow();
+    let at = 0;
+    let picked = null;
+    let lines = [];
+    const clock = (iso) => new Date(`${iso}:00+05:30`).toLocaleString('en-IN', { weekday: 'short', hour: 'numeric', hour12: true, timeZone: 'Asia/Kolkata' });
+    const levelAt = (name, i) => (mode === 'kohra' ? Number(data.d[name].f[i]) : looLevel(data.d[name].t[i]));
+    const window = () => (mode === 'kohra' ? nextMorning(data) : nextPeak(data));
+    const worstOn = (name) => {
+      const { idx } = window();
+      return mode === 'kohra' ? worstFog(data, name, idx) : looLevel(peakTemp(data, name, idx));
+    };
+    const fiveAm = () => {
+      const i = data.hours.findIndex((t) => t.slice(11, 13) === '05');
+      return i < 0 ? 0 : i;
+    };
+    const twoPm = () => {
+      const i = data.hours.findIndex((t) => t.slice(11, 13) === '14');
+      return i < 0 ? 0 : i;
+    };
+    at = mode === 'kohra' ? fiveAm() : twoPm();
+
+    $('#kBody').innerHTML = `<div class="tags"><button data-mode="kohra"><span>Kohra</span></button><button data-mode="loo"><span>Loo</span></button></div>
+      <p class="k-head" id="kHead"></p>
+      <div class="k-when"><span id="kWhen"></span><button id="kJump" type="button"></button></div>
+      <input id="kRange" type="range" min="0" max="${data.hours.length - 1}" value="${at}" aria-label="Forecast hour">
+      <div class="k-legend" id="kLegend"></div>
+      <div id="kPick"><p class="muted">Tap a district on the map for its hour-by-hour risk.</p></div>
+      <div id="kLines"></div>
+      <div id="kTips"></div>
+      <p class="muted">This is a risk estimate from a weather model, using visibility, humidity, dew point and wind. It has not been checked against real fog records, and fog forms in patches a model cannot see. Never treat low risk as safe. Official warnings: <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">IMD</a>. Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. Routes are drawn through district towns, so they are rough.</p>`;
+
+    const paintMap = () => {
+      state.overlay = {
+        fill: (name) => LEVELS[mode][levelAt(name, at)].color,
+        strong: () => true,
+        tip: (name) => {
+          const d = data.d[name];
+          return `<b>${esc(name)}</b>${esc(LEVELS[mode][levelAt(name, at)].label)}<br>${mode === 'kohra' ? `Model visibility ${d.v[at]} km` : `${d.t[at]}°C, feels like ${d.a[at]}°C`}`;
+        },
+        click: (name) => { picked = name; paintPick(); },
+      };
+      state.layer.setStyle(ctx.style);
+    };
+
+    function paintPick() {
+      if (!picked) return;
+      const d = data.d[picked];
+      const bars = data.hours.map((_, i) => {
+        const lv = levelAt(picked, i);
+        return `<i style="height:${25 + lv * 25}%;background:${LEVELS[mode][lv].color};outline:${i === at ? '2px solid #000' : '0'}" title="${esc(clock(data.hours[i]))}"></i>`;
+      }).join('');
+      $('#kPick').innerHTML = `<div class="k-card"><h3>${esc(picked)}</h3>
+        <b>${esc(LEVELS[mode][levelAt(picked, at)].label)}</b> at ${esc(clock(data.hours[at]))}. ${mode === 'kohra' ? `Model visibility ${d.v[at]} km.` : `${d.t[at]}°C, feels like ${d.a[at]}°C.`}
+        <div class="k-strip" role="img" aria-label="Risk for each of the next 48 hours">${bars}</div>
+        <div class="k-axis"><span>${esc(clock(data.hours[0]))}</span><span>${esc(clock(data.hours[data.hours.length - 1]))}</span></div>
+        <button class="link-btn" id="kCity" type="button">Open ${esc(picked)}</button></div>`;
+      $('#kCity').addEventListener('click', () => { const n = picked; closeDossier(); ctx.openCity(n); });
+    }
+
+    // Each line takes the worst stretch along it, since one foggy district is enough to stop a road
+    function lineRow(l, i, kind) {
+      const worst = l.districts.reduce((best, n) => (worstOn(n) > worstOn(best) ? n : best), l.districts[0]);
+      const lv = worstOn(worst);
+      const say = kind === 'road' ? LEVELS.kohra[lv].road : LEVELS.kohra[lv].rail;
+      return `<div class="k-row"><i style="background:${LEVELS.kohra[lv].color}"></i><button data-line="${kind}-${i}">${esc(l.name)}</button>
+        <span>${esc(say)}${lv ? ` Worst near ${esc(worst)}.` : ''}</span></div>`;
+    }
+    function paintLines() {
+      lines.forEach((l) => l.remove());
+      lines = [];
+      if (mode !== 'kohra') {
+        const { idx, word } = nextPeak(data);
+        const hot = Object.keys(data.d).sort((a, b) => peakTemp(data, b, idx) - peakTemp(data, a, idx)).slice(0, 5);
+        $('#kLines').innerHTML = `<h3>Hottest districts, ${esc(word.toLowerCase())}</h3>${hot.map((n) => { const t = peakTemp(data, n, idx); return `<div class="k-row"><i style="background:${LEVELS.loo[looLevel(t)].color}"></i><button data-hot="${esc(n)}">${esc(n)}</button><span>${t}°C at its peak</span></div>`; }).join('')}`;
+        $('#kLines').querySelectorAll('[data-hot]').forEach((b) => b.addEventListener('click', () => { picked = b.dataset.hot; paintPick(); }));
+        $('#kTips').innerHTML = `<h3>Surviving loo</h3><ul class="k-tips"><li>Stay out of direct sun from noon to 4 PM.</li><li>Drink water before you feel thirsty. Aam panna counts.</li><li>Cover your head, and carry water on a bike.</li><li>Confusion, hot dry skin or fainting is an emergency: call 108.</li></ul>`;
+        return;
+      }
+      const { word } = nextMorning(data);
+      $('#kLines').innerHTML = `<h3>Expressways, ${esc(word.toLowerCase())}</h3>${ROADS.map((l, i) => lineRow(l, i, 'road')).join('')}
+        <h3>Train lines, ${esc(word.toLowerCase())}</h3>${RAILS.map((l, i) => lineRow(l, i, 'rail')).join('')}
+        <p class="muted">This is fog risk along the line, not your train's status. <a href="https://enquiry.indianrail.gov.in/mntes/" target="_blank" rel="noopener">Check the real running status on NTES</a>.</p>`;
+      $('#kLines').querySelectorAll('[data-line]').forEach((b) => b.addEventListener('click', () => {
+        const [kind, i] = b.dataset.line.split('-');
+        const route = (kind === 'road' ? ROADS : RAILS)[Number(i)];
+        lines.forEach((l) => l.remove());
+        const shape = L.polyline(route.districts.map((n) => [state.districts[n].lat, state.districts[n].lng]), { color: '#000', weight: 5, dashArray: kind === 'road' ? null : '8 7' }).addTo(group());
+        lines = [shape];
+        keepMapClear(shape.getBounds());
+      }));
+      $('#kTips').innerHTML = `<h3>If you must drive in fog</h3><ul class="k-tips"><li>Low beam only. High beam bounces back and blinds you.</li><li>Slow right down and leave a long gap. Pile-ups start with one sudden stop.</li><li>Never stop on the carriageway. Pull fully off the road first.</li><li>Stuck on a highway? Call 1033 for NHAI, or 112.</li></ul>`;
+    }
+
+    const paintWhen = () => {
+      $('#kWhen').textContent = clock(data.hours[at]);
+    };
+    const paintMode = () => {
+      box().querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === mode));
+      $('#kHead').textContent = headline(data, mode);
+      $('#kJump').textContent = mode === 'kohra' ? 'Go to 5 AM' : 'Go to 2 PM';
+      $('#kLegend').innerHTML = LEVELS[mode].map((l) => `<span><i style="background:${l.color}"></i>${esc(l.label)}</span>`).join('');
+      paintWhen();
+      paintMap();
+      paintLines();
+      paintPick();
+    };
+    const setHour = (i) => {
+      at = i;
+      $('#kRange').value = i;
+      paintWhen();
+      paintMap();
+      paintPick();
+    };
+    $('#kRange').addEventListener('input', (e) => setHour(Number(e.target.value)));
+    $('#kJump').addEventListener('click', () => setHour(mode === 'kohra' ? fiveAm() : twoPm()));
+    box().querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
+      mode = b.dataset.mode;
+      at = mode === 'kohra' ? fiveAm() : twoPm();
+      $('#kRange').value = at;
+      paintMode();
+    }));
+    cleanup = () => {
+      state.overlay = null;
+      lines.forEach((l) => l.remove());
+      state.layer.setStyle(ctx.style);
+    };
+    keepMapClear(state.layer.getBounds());
+    paintMode();
+  }
+
+  const RUN = { kohra, hub, samay, radio, mausam, train, naak, bhasha, karigar, plate, ajeeb };
 
   async function open(key = 'hub') {
     const run = RUN[key] || hub;

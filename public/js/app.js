@@ -1,4 +1,5 @@
 import { initGhoomo } from './ghoomo.js';
+import { seasonNow, loadKohra, headline, cityLine } from './kohra.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -180,6 +181,9 @@ async function initMap() {
   $('#nearMe').addEventListener('click', nearMe);
   $('#todayNews').addEventListener('change', showStatePins);
   $('#ghoomoBtn').addEventListener('click', () => ghoomo.open('hub'));
+  $('#kohraBtn').addEventListener('click', () => ghoomo.open('kohra'));
+  $('#kohraName').textContent = seasonNow() === 'kohra' ? 'Kohra meter' : 'Loo meter';
+  loadKohra().then((data) => { $('#kohraLine').textContent = headline(data); }).catch(() => { $('#kohraLine').textContent = 'Forecast unavailable right now. Tap to retry.'; });
   $('#rolaToggle').addEventListener('click', () => {
     const body = $('#rolaBody');
     body.hidden = !body.hidden;
@@ -473,6 +477,11 @@ async function weatherBlock(el) {
     const w = await api('weather', { lat, lng });
     el.innerHTML = `<div><dt>Temperature</dt><dd>${Math.round(w.temp)}°C<small>Feels like ${Math.round(w.feels)}°C, ${esc(SKY.find(([c]) => w.code <= c)?.[1] || '')}</small></dd></div>
       <div><dt>Air quality (US AQI)</dt><dd>${esc(w.aqi)}<small>${esc(AQI.find(([n]) => w.aqi <= n)?.[1] || '')}</small></dd></div>`;
+    const city = state.current;
+    loadKohra().then((data) => {
+      const line = cityLine(data, city);
+      if (line && state.current === city && el.isConnected) el.insertAdjacentHTML('beforeend', `<div><dt>${esc(line.label)}</dt><dd>${esc(line.value)}${line.small ? `<small>${esc(line.small)}</small>` : ''}</dd></div>`);
+    }).catch(() => {});
   } catch (err) { el.innerHTML = failed('weather', err); }
 }
 
@@ -1171,7 +1180,7 @@ function openCity(name, origin) {
 }
 
 const ghoomo = initGhoomo({
-  $, esc, state, store, api, dirLink, pinIcon, go, keepMapClear, showStatePins, style,
+  $, esc, state, store, api, dirLink, pinIcon, go, keepMapClear, showStatePins, style, openCity,
   closeDossier: () => closeDossier(),
   // Ghoomo draws on the district map, so Chunav's seat layer has to step aside first
   enterGhoomo: async () => { if (chunav.on) await setChunav(false); state.current = null; state.newsPins?.clearLayers(); state.pins?.clearLayers(); state.layer?.setStyle(style); },

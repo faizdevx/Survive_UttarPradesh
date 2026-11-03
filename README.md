@@ -21,6 +21,7 @@ Then open http://localhost:4173.
 | MLAs, declared cases and assets | MyNeta/ADR affidavits from 2022, with later bye-election winners from Wikipedia | Refreshed by `node scripts/build-netas.mjs`, then `node scripts/build-seats.mjs` |
 | Chunav mode seats | Boundaries by [DataMeet](https://github.com/datameet/maps/tree/master/assembly-constituencies) ([CC BY 2.5 IN](http://creativecommons.org/licenses/by/2.5/in/)). 2022 votes and margins from Wikipedia | Refreshed by `node scripts/build-seats.mjs` |
 | Weather and air quality | Open-Meteo | Yes |
+| Kohra and loo meter | Open-Meteo forecast. Fog risk combines visibility, humidity, dew point and wind, and has not been checked against real fog records | Yes, cached 1 hour |
 | Landmarks near you | Wikipedia geosearch | Yes, cached 10 minutes |
 | Events, films, companies | Wikidata | Yes, cached 10 minutes |
 | Headline meters and money | Counted from Google News titles. Attention, not support or spending | Yes, cached 10 minutes |
@@ -35,7 +36,7 @@ Then open http://localhost:4173.
 
 ## Ghoomo
 
-Nine niche pages, most of them hand-collected: Samay slider (Esri Wayback imagery back to 2014), Tune the TV (Radio Browser), Sirf is mausam mein, Bhojan by train, Naak ka naksha, Bhasha slider, Aakhri karigar, Plate bingo and Ajeeb gaon. Hand-collected entries live in `public/js/ghoomo-data.js` and have not been checked on the ground. Dialect lines still need native speakers.
+Ten niche pages, most of them hand-collected: Kohra meter (live fog and loo risk), Samay slider (Esri Wayback imagery back to 2014), Tune the TV (Radio Browser), Sirf is mausam mein, Bhojan by train, Naak ka naksha, Bhasha slider, Aakhri karigar, Plate bingo and Ajeeb gaon. Hand-collected entries live in `public/js/ghoomo-data.js` and have not been checked on the ground. Dialect lines still need native speakers.
 
 ## What it leaves out on purpose
 
