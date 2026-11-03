@@ -1,6 +1,6 @@
 import { initGhoomo } from './ghoomo.js';
 import { initTilt, initGrip } from './feel.js';
-import { loadMplads, rupeesCr } from './hisaab.js';
+import { loadMplads, loadTenders, rupeesCr } from './hisaab.js';
 import { seasonNow, loadKohra, headline, cityLine } from './kohra.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
@@ -965,6 +965,8 @@ function openCity(name, origin) {
       <p><button class="action" id="openHisaab" type="button">Open Mera Hisaab for the full picture</button></p>
       <h3>MP fund payments run from ${esc(name)}</h3>
       <div id="mpMoney">Loading…</div>
+      <h3>Tenders naming ${esc(search)}</h3>
+      <div id="cityTenders">Loading…</div>
       <h3>Money named in headlines</h3>
       <p class="muted">Rupee amounts in the last 90 days of news, grouped by who the headline names. This is announced money, and a headline can repeat or overlap another.</p>
       <div id="moneyNews">Loading…</div>
@@ -1154,9 +1156,17 @@ function openCity(name, origin) {
         if (!slot) return;
         const here = mp.districts[name];
         slot.innerHTML = here
-          ? `<p class="lead"><b>${rupeesCr(here.paid)}</b> paid, ${rupeesCr(here.inProgress)} payment in progress, across ${here.works.toLocaleString('en-IN')} works for: ${esc(here.seats.join(', '))}.</p><p class="muted">Government payment records for Lok Sabha MPs, current term, to ${esc(mp.lastDate)}. A payment does not prove a work is finished.</p>`
+          ? `<p class="lead"><b>${rupeesCr(here.paid)}</b> paid, ${rupeesCr(here.inProgress)} payment in progress. ${here.done.toLocaleString('en-IN')} works marked complete, of ${here.san.toLocaleString('en-IN')} sanctioned.</p><p class="muted">For: ${esc(here.seats.join(', '))}. Government portal records for sitting MPs of both Houses. "Complete" is the portal's word, so go and look.</p>`
           : '<p class="empty">No MP fund payment found for this district yet. That does not mean no work happened.</p>';
       }).catch((err) => { const slot = $('#mpMoney'); if (slot) slot.innerHTML = failed('MP fund records', err); });
+      loadTenders().then((list) => {
+        const slot = $('#cityTenders');
+        if (!slot) return;
+        const here = list.filter((t) => new RegExp(`\\b${search.replace(/[^\w ]/g, '')}\\b`, 'i').test(t.title));
+        slot.innerHTML = here.length
+          ? `<ul class="list">${here.map((t) => `<li>${esc(t.title)}<span class="meta">Closes ${esc(t.closes)}. Bids invited, so nothing is paid yet.</span></li>`).join('')}</ul>`
+          : '<p class="muted">None in the short public list right now. <a href="https://etender.up.nic.in/nicgep/app" target="_blank" rel="noopener">Search the portal</a>.</p>';
+      }).catch(() => { const slot = $('#cityTenders'); if (slot) slot.innerHTML = '<p class="muted"><a href="https://etender.up.nic.in/nicgep/app" target="_blank" rel="noopener">Open the tender portal</a>.</p>'; });
       moneyBlock($('#moneyNews'), search);
       newsBlock($('#projectNews'), `${search} project crore sanctioned OR completed OR inaugurated`);
     },

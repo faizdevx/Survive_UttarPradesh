@@ -151,8 +151,8 @@ export const PROJECTS = [
   { name: 'Kanpur Metro', cost: '₹11,076 cr reported', km: '32 km planned', wiki: 'Kanpur_Metro', districts: ['Kanpur Nagar'] },
   { name: 'Agra Metro', cost: '₹8,379 cr reported', km: '30 km planned', wiki: 'Agra_Metro', districts: ['Agra'] },
   { name: 'Lucknow Metro', cost: '₹6,928 cr reported, phase one', km: '23 km operating', wiki: 'Lucknow_Metro', districts: ['Lucknow'] },
-  { name: 'Varanasi ropeway', cost: 'About ₹800 cr reported', km: '3.8 km', wiki: 'Varanasi_Ropeway', districts: ['Varanasi'] },
-  { name: 'Kashi Vishwanath Corridor', cost: 'About ₹800 cr reported', km: '', wiki: 'Kashi_Vishwanath_Corridor', districts: ['Varanasi'] },
+  { name: 'Varanasi ropeway', cost: '₹645 to ₹816 cr reported', km: '3.8 km', wiki: 'Varanasi_Ropeway', districts: ['Varanasi'] },
+  { name: 'Kashi Vishwanath Corridor', cost: 'Phase one ₹339 to ₹355 cr reported', km: '', wiki: 'Kashi_Vishwanath_Corridor', districts: ['Varanasi'] },
   { name: 'Maharishi Valmiki Airport, Ayodhya', cost: 'About ₹1,450 cr reported, phase one', km: '', wiki: 'Ayodhya_Airport', districts: ['Ayodhya'] },
 ];
 

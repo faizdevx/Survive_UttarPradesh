@@ -21,7 +21,11 @@ Then open http://localhost:4173.
 | MLAs, declared cases and assets | MyNeta/ADR affidavits from 2022, with later bye-election winners from Wikipedia | Refreshed by `node scripts/build-netas.mjs`, then `node scripts/build-seats.mjs` |
 | Chunav mode seats | Boundaries by [DataMeet](https://github.com/datameet/maps/tree/master/assembly-constituencies) ([CC BY 2.5 IN](http://creativecommons.org/licenses/by/2.5/in/)). 2022 votes and margins from Wikipedia | Refreshed by `node scripts/build-seats.mjs` |
 | Weather and air quality | Open-Meteo | Yes |
-| Kohra and loo meter | Open-Meteo forecast. Fog risk combines visibility, humidity, dew point and wind, and has not been checked against real fog records | Yes, cached 1 hour |
+| Kohra and loo meter | Open-Meteo forecast. Fog risk combines visibility, humidity, dew point and wind. Scored against last winter by `node scripts/kohra-backtest.mjs` | Yes, cached 1 hour |
+| Airport fog readings | Iowa Environmental Mesonet METAR archive, for the 3 UP airports it holds | Cached 20 minutes |
+| Expressway shapes | OpenStreetMap, by `node scripts/build-roads.mjs`, when Overpass answers | Rebuilt by hand |
+| Samay photo dates | Esri Wayback metadata for the exact spot | Cached 6 hours |
+| Ajeeb gaon, karigar pins | GeoNames (CC BY 4.0), by `node scripts/build-ghoomo.mjs` | Rebuilt by hand |
 | Landmarks near you | Wikipedia geosearch | Yes, cached 10 minutes |
 | Events, films, companies | Wikidata | Yes, cached 10 minutes |
 | Headline meters and money | Counted from Google News titles. Attention, not support or spending | Yes, cached 10 minutes |
@@ -34,7 +38,10 @@ Then open http://localhost:4173.
 | Famous people | Wikidata, by birthplace | Yes, cached 10 minutes |
 | Projects | Press-reported totals in `public/js/content.js`, with live news | Totals fixed |
 | Mera Hisaab budget | PRS Legislative Research, UP Budget Analysis 2026-27 | Refreshed by `node scripts/build-hisaab.mjs` |
-| Mera Hisaab MP funds | MoSPI MPLADS portal, Lok Sabha MPs, current term. Contractor names removed | Server rechecks every 6 hours |
+| Mera Hisaab MP funds | MoSPI MPLADS portal, sitting members of both Houses: recommended, sanctioned, marked complete, paid. Work descriptions removed, since some hold phone numbers, and only clearly business names kept | Server rechecks every 6 hours |
+| Mera Hisaab tenders | UP e-tender portal, public home list only. The captcha-gated search is not touched | Cached 15 minutes |
+| Mera Hisaab audit | CAG report list, picked by UP in the title, links only | Refreshed by `node scripts/build-hisaab.mjs` |
+| Mera Hisaab project proof | Government pages, press and Wikipedia, in `public/js/hisaab-evidence.js` | Checked by hand, 3 Nov 2026 |
 
 ## Ghoomo
 

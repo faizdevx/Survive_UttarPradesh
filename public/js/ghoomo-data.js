@@ -1,7 +1,7 @@
 // Hand-collected content for Ghoomo. Stops use a district's main town unless they carry their own lat and lng.
 
 export const SAMAY_SPOTS = [
-  { name: 'Sangam, Prayagraj', lat: 25.43, lng: 81.885, zoom: 14, note: 'Sand changes every year as the rivers move. Mela tents show up only if the satellite passed at the right time.' },
+  { name: 'Sangam, Prayagraj', lat: 25.43, lng: 81.885, zoom: 14, mela: true, note: 'Sand changes every year as the rivers move. Mela tents show up only if a satellite passed at the right time.' },
   { name: 'Jewar airport', lat: 28.17, lng: 77.61, zoom: 14, note: 'Fields become a runway. Drag the slider to watch it happen.' },
   { name: 'Greater Noida West', lat: 28.6, lng: 77.43, zoom: 14, note: 'Farmland turning into towers.' },
   { name: 'Ram Mandir, Ayodhya', lat: 26.795, lng: 82.194, zoom: 16, note: 'Watch the temple site change.' },
@@ -81,12 +81,12 @@ export const SMELLS = [
 ];
 
 export const DIALECTS = [
-  { key: 'kauravi', name: 'Kauravi', color: '#D3201F', where: 'Meerut side', lines: [['कित जा रया है?', 'Kit ja rya hai?'], ['के कर रया है?', 'Ke kar rya hai?']], districts: ['Saharanpur', 'Muzaffarnagar', 'Shamli', 'Baghpat', 'Meerut', 'Ghaziabad', 'Gautam Buddha Nagar', 'Hapur', 'Bulandshahr', 'Bijnor', 'Moradabad', 'Rampur', 'Amroha', 'Sambhal'] },
-  { key: 'braj', name: 'Braj', color: '#F08A1D', where: 'Mathura side', lines: [['कहाँ जाय रह्यो है?', 'Kahan jaay rahyo hai?'], ['का कर रह्यो है?', 'Ka kar rahyo hai?']], districts: ['Mathura', 'Agra', 'Aligarh', 'Hathras', 'Firozabad', 'Mainpuri', 'Etah', 'Kasganj', 'Budaun', 'Bareilly'] },
-  { key: 'kannauji', name: 'Kannauji', color: '#F6C400', where: 'Kannauj side', lines: [['कहाँ जाय रहे हौ?', 'Kahan jaay rahe hau?'], ['का कर रहे हौ?', 'Ka kar rahe hau?']], districts: ['Kannauj', 'Farrukhabad', 'Etawah', 'Auraiya', 'Kanpur Nagar', 'Kanpur Dehat', 'Hardoi', 'Shahjahanpur', 'Pilibhit'] },
-  { key: 'bundeli', name: 'Bundeli', color: '#8C5AC8', where: 'Jhansi side', lines: [['कितै जा रए?', 'Kite ja rae?'], ['का कर रए?', 'Ka kar rae?']], districts: ['Jhansi', 'Lalitpur', 'Jalaun', 'Hamirpur', 'Mahoba', 'Banda', 'Chitrakoot'] },
-  { key: 'awadhi', name: 'Awadhi', color: '#1E7F3A', where: 'Lucknow and Ayodhya side', lines: [['कहाँ जात हौ?', 'Kahan jaat hau?'], ['का करत हौ?', 'Ka karat hau?']], districts: ['Lucknow', 'Unnao', 'Rae Bareli', 'Sitapur', 'Lakhimpur Kheri', 'Barabanki', 'Ayodhya', 'Ambedkar Nagar', 'Sultanpur', 'Amethi', 'Pratapgarh', 'Prayagraj', 'Kaushambi', 'Fatehpur', 'Bahraich', 'Shrawasti', 'Balrampur', 'Gonda'] },
-  { key: 'bhojpuri', name: 'Bhojpuri', color: '#1C8FD6', where: 'Varanasi and Gorakhpur side', lines: [['कहाँ जात बाड़ा?', 'Kahan jaat baada?'], ['का करत बाड़ा?', 'Ka karat baada?']], districts: ['Varanasi', 'Chandauli', 'Ghazipur', 'Ballia', 'Azamgarh', 'Mau', 'Jaunpur', 'Bhadohi', 'Mirzapur', 'Sonbhadra', 'Gorakhpur', 'Deoria', 'Kushinagar', 'Maharajganj', 'Siddharthnagar', 'Basti', 'Sant Kabir Nagar'] },
+  { key: 'kauravi', wiki: 'Hindustani_language', name: 'Kauravi', color: '#D3201F', where: 'Meerut side', lines: [['कित जा रया है?', 'Kit ja rya hai?'], ['के कर रया है?', 'Ke kar rya hai?']], districts: ['Saharanpur', 'Muzaffarnagar', 'Shamli', 'Baghpat', 'Meerut', 'Ghaziabad', 'Gautam Buddha Nagar', 'Hapur', 'Bulandshahr', 'Bijnor', 'Moradabad', 'Rampur', 'Amroha', 'Sambhal'] },
+  { key: 'braj', wiki: 'Braj_Bhasha', name: 'Braj', color: '#F08A1D', where: 'Mathura side', lines: [['कहाँ जाय रह्यो है?', 'Kahan jaay rahyo hai?'], ['का कर रह्यो है?', 'Ka kar rahyo hai?']], districts: ['Mathura', 'Agra', 'Aligarh', 'Hathras', 'Firozabad', 'Mainpuri', 'Etah', 'Kasganj', 'Budaun', 'Bareilly'] },
+  { key: 'kannauji', wiki: 'Kannauji_language', name: 'Kannauji', color: '#F6C400', where: 'Kannauj side', lines: [['कहाँ जाय रहे हौ?', 'Kahan jaay rahe hau?'], ['का कर रहे हौ?', 'Ka kar rahe hau?']], districts: ['Kannauj', 'Farrukhabad', 'Etawah', 'Auraiya', 'Kanpur Nagar', 'Kanpur Dehat', 'Hardoi', 'Shahjahanpur', 'Pilibhit'] },
+  { key: 'bundeli', wiki: 'Bundeli_language', name: 'Bundeli', color: '#8C5AC8', where: 'Jhansi side', lines: [['कितै जा रए?', 'Kite ja rae?'], ['का कर रए?', 'Ka kar rae?']], districts: ['Jhansi', 'Lalitpur', 'Jalaun', 'Hamirpur', 'Mahoba', 'Banda', 'Chitrakoot'] },
+  { key: 'awadhi', wiki: 'Awadhi_language', name: 'Awadhi', color: '#1E7F3A', where: 'Lucknow and Ayodhya side', lines: [['कहाँ जात हौ?', 'Kahan jaat hau?'], ['का करत हौ?', 'Ka karat hau?']], districts: ['Lucknow', 'Unnao', 'Rae Bareli', 'Sitapur', 'Lakhimpur Kheri', 'Barabanki', 'Ayodhya', 'Ambedkar Nagar', 'Sultanpur', 'Amethi', 'Pratapgarh', 'Prayagraj', 'Kaushambi', 'Fatehpur', 'Bahraich', 'Shrawasti', 'Balrampur', 'Gonda'] },
+  { key: 'bhojpuri', wiki: 'Bhojpuri_language', name: 'Bhojpuri', color: '#1C8FD6', where: 'Varanasi and Gorakhpur side', lines: [['कहाँ जात बाड़ा?', 'Kahan jaat baada?'], ['का करत बाड़ा?', 'Ka karat baada?']], districts: ['Varanasi', 'Chandauli', 'Ghazipur', 'Ballia', 'Azamgarh', 'Mau', 'Jaunpur', 'Bhadohi', 'Mirzapur', 'Sonbhadra', 'Gorakhpur', 'Deoria', 'Kushinagar', 'Maharajganj', 'Siddharthnagar', 'Basti', 'Sant Kabir Nagar'] },
 ];
 
 // Trades and public places only. No private homes or named individuals.

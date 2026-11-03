@@ -63,12 +63,28 @@ const known = Object.keys(JSON.parse(fs.readFileSync('public/data/districts.json
 const mp = await fetchMplads(known);
 fs.writeFileSync('public/data/hisaab-mplads.json', JSON.stringify(mp));
 
+// CAG lists every state's reports together, so UP's are picked out by title
+const audit = [];
+const seenReports = new Set();
+let pagesRead = 0;
+for (let page = 1; page <= 60; page += 1) {
+  const r = await fetch(`https://cag.gov.in/en/audit-report?page=${page}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(40000) }).catch(() => null);
+  if (!r?.ok) break;
+  const cards = [...(await r.text()).matchAll(/href="(\/en\/audit-report\/details\/\d+)"[^>]*>([^<]{8,400})</g)];
+  if (!cards.length) break;
+  pagesRead += 1;
+  cards.forEach(([, href, name]) => {
+    const t = clean(name);
+    if (/uttar pradesh/i.test(t) && !seenReports.has(href)) { seenReports.add(href); audit.push({ title: t, url: `https://cag.gov.in${href}` }); }
+  });
+  await new Promise((x) => setTimeout(x, 700));
+}
+fs.writeFileSync('public/data/hisaab-audit.json', JSON.stringify({ fetchedAt: new Date().toISOString(), source: 'https://cag.gov.in/en/audit-report', pagesRead, reports: audit }));
+
 const cr = (n) => `${(n / 1e7).toFixed(1)} cr`;
-console.log({ presented: budget.presented, net: budget.totals.netExpenditure, sectors: budget.sectors.length, capital: budget.promise.capital, sectors2024: budget.promise.sectors2024.length, receipts: budget.receipts.map((r) => r.vals[3]), ownTax: budget.ownTax.map((x) => x.name) });
-console.log(budget.sectors.map((s) => `${s.name}: ${s.vals.join(', ')}`).join('\n'));
-console.log(budget.promise.sectors2024.slice(0, 6).map((s) => `${s.name} ${s.budget}>${s.actual} ${s.change}%`).join(' | '));
-console.log({ rows: mp.rows, seats: mp.seats.length, paid: cr(mp.paid), inProgress: cr(mp.inProgress), dates: [mp.firstDate, mp.lastDate], tenures: mp.tenures, districts: Object.keys(mp.districts).length, missingDistricts: known.filter((d) => !mp.districts[d]), unmatched: mp.unmatched });
-console.log('top', mp.seats.slice(0, 3).map((s) => `${s.seat} ${cr(s.paid)} ${s.works} works`), 'bottom', mp.seats.slice(-3).map((s) => `${s.seat} ${cr(s.paid)}`));
-console.log('bytes', fs.statSync('public/data/hisaab-mplads.json').size, fs.statSync('public/data/hisaab-budget.json').size);
+Object.entries(mp.houses).forEach(([h, t]) => console.log(h, { members: t.members, rows: t.rows, rec: [t.recommended.n, cr(t.recommended.amt)], san: [t.sanctioned.n, cr(t.sanctioned.amt)], done: [t.completed.n, cr(t.completed.amt)], paid: cr(t.paid), inProgress: cr(t.inProgress), dates: [t.firstDate, t.lastDate] }));
+console.log({ districts: Object.keys(mp.districts).length, missing: known.filter((d) => !mp.districts[d]) });
 const blob = fs.readFileSync('public/data/hisaab-mplads.json', 'utf8');
-console.log('contractor fields in output:', /VENDOR/i.test(blob));
+console.log({ bytes: blob.length, phoneLike: (blob.match(/\b[6-9]\d{9}\b/g) || []).length, descriptionField: /WORK_DESCRIPTION|VENDOR_/.test(blob) });
+console.log('firms sample', mp.seats.flatMap((s) => s.firms.map((x) => x[0])).slice(0, 6));
+console.log({ auditPages: pagesRead, auditReports: audit.length, sample: audit.slice(0, 3).map((a) => a.title.slice(0, 70)) });

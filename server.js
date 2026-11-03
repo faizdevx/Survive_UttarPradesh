@@ -3,7 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { fetchMplads } from './scripts/mplads-lib.mjs';
+import { fetchMplads, fetchTenders } from './scripts/mplads-lib.mjs';
 
 const PORT = process.env.PORT || 4173;
 const ROOT = path.join(import.meta.dirname, 'public');
@@ -374,10 +374,31 @@ async function candidates() {
   return { ready: !/Page Not Found/i.test(html), url: 'https://www.myneta.info/uttarpradesh2027/' };
 }
 
+// Live airport readings. Only these UP airports have records in the Iowa archive.
+const AIRPORTS = { VILK: 'Lucknow', VEBN: 'Varanasi', VEAY: 'Ayodhya' };
+async function kohraobs() {
+  const fmt = (t) => [t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()];
+  const [y1, m1, d1] = fmt(new Date(Date.now() - 36 * 3600000));
+  const [y2, m2, d2] = fmt(new Date(Date.now() + 24 * 3600000));
+  const out = [];
+  // The archive asks for one request at a time
+  for (const [id, district] of Object.entries(AIRPORTS)) {
+    const u = `https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=${id}&data=vsby&data=wxcodes&year1=${y1}&month1=${m1}&day1=${d1}&year2=${y2}&month2=${m2}&day2=${d2}&tz=UTC&format=onlycomma&latlon=no&missing=empty&trace=empty&direct=no&report_type=3&report_type=4`;
+    try {
+      const rows = (await get(u, { signal: AbortSignal.timeout(40000) })).trim().split('\n').slice(1).map((l) => l.split(',')).filter((c) => c[2] !== '');
+      const last = rows[rows.length - 1];
+      if (last) out.push({ id, district, at: `${last[1].replace(' ', 'T')}:00Z`, metres: Math.round(Number(last[2]) * 1609.34), wx: last[3] || '' });
+    } catch { /* one quiet airport should not lose the others */ }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  if (!out.length) throw new Error('the airport archive did not answer');
+  return { fetchedAt: new Date().toISOString(), source: 'https://mesonet.agron.iastate.edu/request/download.phtml', stations: out };
+}
+
 // One archive date per half year, plus the newest
 async function wayback() {
   const cfg = JSON.parse(await get('https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json'));
-  const all = Object.entries(cfg).map(([id, v]) => ({ id, date: v.itemTitle.match(/\d{4}-\d{2}-\d{2}/)?.[0] })).filter((r) => r.date).sort((a, b) => a.date.localeCompare(b.date));
+  const all = Object.entries(cfg).map(([id, v]) => ({ id, meta: v.metadataLayerUrl, date: v.itemTitle.match(/\d{4}-\d{2}-\d{2}/)?.[0] })).filter((r) => r.date).sort((a, b) => a.date.localeCompare(b.date));
   const seen = new Set();
   const picked = all.filter((r) => {
     const half = `${r.date.slice(0, 4)}-${Number(r.date.slice(5, 7)) <= 6 ? 1 : 2}`;
@@ -385,6 +406,33 @@ async function wayback() {
   });
   if (picked[picked.length - 1] !== all[all.length - 1]) picked.push(all[all.length - 1]);
   return picked;
+}
+
+// Esri's own record of when each photo was really taken at this spot
+async function samayhere(params) {
+  const [la, lo] = coords(params);
+  const stops = await cached('wayback:list', wayback, 24 * 3600000);
+  const ask = async (s) => {
+    for (const layer of [6, 7, 5]) {
+      const u = `${s.meta}/${layer}/query?geometry=${lo},${la}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=SRC_DATE,SRC_RES,SRC_DESC&returnGeometry=false&f=json`;
+      try {
+        const a = JSON.parse(await get(u, { signal: AbortSignal.timeout(15000) })).features?.[0]?.attributes;
+        if (a?.SRC_DATE) {
+          const d = String(a.SRC_DATE);
+          return { id: s.id, archived: s.date, photo: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, res: a.SRC_RES, sat: a.SRC_DESC };
+        }
+      } catch { /* next layer */ }
+    }
+    return { id: s.id, archived: s.date, photo: null };
+  };
+  const results = [];
+  for (let i = 0; i < stops.length; i += 5) results.push(...await Promise.all(stops.slice(i, i + 5).map(ask)));
+  const dated = results.filter((r) => r.photo);
+  if (!dated.length) return { dated: false, stops: results };
+  // Archive dates can show the same photo many times, so each real photo appears once
+  const seen = new Map();
+  dated.forEach((r) => { if (!seen.has(r.photo)) seen.set(r.photo, r); });
+  return { dated: true, stops: [...seen.values()].sort((a, b) => a.photo.localeCompare(b.photo)) };
 }
 
 // Radio Browser asks clients to try its mirrors in turn
@@ -402,13 +450,29 @@ const NATIONAL = /^Vividh Bharati$|Akashvani AIR FM Gold|All India Radio News|Fm
 async function radio() {
   const local = await radioSearch('country=India&state=Uttar%20Pradesh');
   const cities = await Promise.all(['Lucknow', 'Agra', 'Varanasi', 'Kanpur', 'Prayagraj', 'Allahabad', 'Gorakhpur', 'Meerut'].map((c) => radioSearch(`countrycode=IN&name=${c}`).catch(() => [])));
-  const bhojpuri = await radioSearch('countrycode=IN&name=Bhojpuri').catch(() => []);
+  const bhojpuri = (await Promise.all(['countrycode=IN&name=Bhojpuri', 'language=bhojpuri', 'tag=bhojpuri'].map((q) => radioSearch(q).catch(() => [])))).flat();
   const national = (await Promise.all(['Vividh Bharati', 'Akashvani', 'AIR FM', 'All India Radio', 'Radio Mirchi'].map((n) => radioSearch(`countrycode=IN&name=${encodeURIComponent(n)}`).catch(() => [])))).flat().filter((s) => NATIONAL.test(s.name.trim()));
   const seen = new Set();
   const band = (band, list) => list.map((s) => ({ band, name: s.name.trim(), url: s.url_resolved }));
   // https only, so the stations also play once the site is hosted
-  return [...band('From UP', [...local, ...cities.flat()]), ...band('Bhojpuri', bhojpuri), ...band('National', national)]
+  const list = [...band('Listed as UP', [...local, ...cities.flat()]), ...band('Bhojpuri', bhojpuri), ...band('National', national)]
     .filter((s) => s.url?.startsWith('https://') && !seen.has(s.name.toLowerCase()) && seen.add(s.name.toLowerCase()));
+  const alive = async (s) => {
+    try {
+      const r = await fetch(s.url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(7000) });
+      const type = r.headers.get('content-type') || '';
+      r.body?.cancel().catch(() => {});
+      return r.ok && /audio|mpegurl|ogg|aac|octet-stream/i.test(type) && !/mpegurl/i.test(type);
+    } catch { return false; }
+  };
+  const out = [];
+  for (let i = 0; i < list.length; i += 5) {
+    const batch = list.slice(i, i + 5);
+    const ok = await Promise.all(batch.map(alive));
+    batch.forEach((s, k) => { if (ok[k]) out.push({ ...s, checkedAt: new Date().toISOString() }); });
+  }
+  if (!out.length) throw new Error('no station answered the check');
+  return out;
 }
 
 // Forecast visibility alone misses most fog here: in a test across all districts, 95 of 105 calm
@@ -464,9 +528,9 @@ async function mplads() {
   return data;
 }
 
-const TTLS = { kohra: 60 * 60 * 1000, mplads: 30 * 1000 };
+const TTLS = { kohraobs: 20 * 60 * 1000, samayhere: 6 * 60 * 60 * 1000, radio: 30 * 60 * 1000, kohra: 60 * 60 * 1000, mplads: 30 * 1000, tenders: 15 * 60 * 1000 };
 
-const API = { mplads, kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
+const API = { kohraobs, samayhere, tenders: fetchTenders, mplads, kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
