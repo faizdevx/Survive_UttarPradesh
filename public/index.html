@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Survive Uttar Pradesh</title>
+<meta name="description" content="A live satellite map of Uttar Pradesh: who holds which seat, who comes from where, and where to get chai.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Mukta:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@600&family=Rozha+One&family=VT323&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="tv" class="tv" role="dialog" aria-label="Survive Uttar Pradesh intro">
+  <div class="tv-set">
+    <div class="tv-screen" id="tvScreen">
+      <canvas id="static" aria-hidden="true"></canvas>
+      <div class="phone-bar"><span>▂▄▆ ✉</span><span id="clock">--:--</span><span>▮▮▮</span></div>
+
+      <div class="tv-page" id="tvTitle">
+        <h1>Survive<br>Uttar<br>Pradesh!!</h1>
+        <p class="tv-hi">उत्तर प्रदेश में ज़िंदा कैसे रहें</p>
+      </div>
+
+      <form class="tv-page" id="tvAge" hidden>
+        <label for="ageInput">Umar kitni hai?</label>
+        <input id="ageInput" type="number" min="5" max="110" inputmode="numeric" placeholder="20" required>
+        <p>Your age picks the underrated spots you see. It stays in this browser.</p>
+        <button class="soft-go" type="submit">Open the map</button>
+      </form>
+
+      <div class="phone-keys"><span>Menu</span><span>ArabianTune</span><span>Back</span></div>
+    </div>
+    <div class="tv-controls">
+      <img src="img/4.jpg" alt="Parental advisory poster: I say fuck a lot" class="tv-advisory">
+      <button id="powerBtn" class="power">Turn on</button>
+    </div>
+  </div>
+</div>
+
+<main id="app" class="app">
+  <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
+
+  <section class="rola" id="rola">
+    <h2>Rola kiska?</h2>
+    <div class="switch" role="radiogroup" aria-label="Map layer">
+      <button role="radio" aria-checked="true" data-mode="party">Which party</button>
+      <button role="radio" aria-checked="false" data-mode="samaj">Which samaj</button>
+    </div>
+    <div id="legend" class="legend"></div>
+    <p id="legendNote" class="note"></p>
+    <details class="wall">
+      <summary>Poster wall</summary>
+      <div class="wall-grid">
+        <img src="img/12.jpg" alt="Film-style poster with a burning car">
+        <img src="img/6.jpg" alt="Poster portrait of a politician">
+        <img src="img/7.jpg" alt="Poster portrait with folded hands">
+        <img src="img/8.jpg" alt="Press photo of a politician speaking">
+        <img src="img/9.jpg" alt="Press photo of a politician in a red cap">
+      </div>
+    </details>
+  </section>
+
+  <div class="find">
+    <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span>Near me</span></button>
+    <select id="districtPick" aria-label="Choose a district"><option value="">Or pick a district</option></select>
+    <p id="findMsg" class="note" role="status"></p>
+  </div>
+
+  <aside id="dossier" class="dossier" aria-label="City dossier" hidden></aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
