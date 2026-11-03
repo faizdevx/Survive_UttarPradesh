@@ -45,11 +45,14 @@
   <section class="rola" id="rola">
     <h2>Rola kiska?</h2>
     <div class="switch" role="radiogroup" aria-label="Map layer">
-      <button role="radio" aria-checked="true" data-mode="party">Which party</button>
-      <button role="radio" aria-checked="false" data-mode="samaj">Which samaj</button>
+      <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
+      <button role="radio" aria-checked="false" data-mode="mla">Vidhan Sabha</button>
+      <button role="radio" aria-checked="false" data-mode="samaj">Samaj</button>
     </div>
     <div id="legend" class="legend"></div>
     <p id="legendNote" class="note"></p>
+    <label class="today"><input type="checkbox" id="todayNews" checked> Today's UP news on the map</label>
+    <p id="todayMsg" class="note" role="status"></p>
     <details class="wall">
       <summary>Poster wall</summary>
       <div class="wall-grid">

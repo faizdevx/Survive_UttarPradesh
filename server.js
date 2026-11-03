@@ -31,6 +31,15 @@ const OSM = {
   young: ['nwr["tourism"="viewpoint"]', 'nwr["man_made"="bridge"]["name"]', 'nwr["natural"="tree"]["name"]', 'nwr["tourism"="artwork"]', 'nwr["waterway"="waterfall"]', 'nwr["historic"="ruins"]', 'nwr["bridge"="yes"]["name"]["highway"]'],
   mid: ['nwr["historic"]["name"]', 'nwr["tourism"="museum"]', 'nwr["tourism"="gallery"]', 'nwr["leisure"="nature_reserve"]', 'nwr["waterway"="waterfall"]'],
   senior: ['nwr["leisure"="garden"]["name"]', 'nwr["historic"]["name"]', 'nwr["man_made"="ghat"]', 'nwr["name"~"ghat|घाट",i]["highway"!~"."]'],
+  river: ['way["waterway"="river"]["name"]', 'nwr["natural"="water"]["name"]', 'nwr["name"~"ghat|घाट",i]["highway"!~"."]'],
+  bridge: ['nwr["man_made"="bridge"]["name"]', 'way["bridge"="yes"]["name"]["highway"]', 'way["bridge"="yes"]["name"]["railway"]'],
+  tree: ['nwr["natural"="tree"]["name"]', 'nwr["natural"="tree"]["denotation"]', 'nwr["name"~"bargad|banyan|peepal|पीपल|बरगद",i]'],
+  art: ['nwr["tourism"="artwork"]', 'nwr["tourism"="gallery"]', 'nwr["shop"="art"]'],
+  party: ['nwr["office"="political_party"]'],
+  police: ['nwr["amenity"="police"]'],
+  hospital: ['nwr["amenity"="hospital"]'],
+  fashion: ['nwr["shop"="clothes"]["name"]', 'nwr["shop"="tailor"]', 'nwr["shop"="second_hand"]', 'nwr["name"~"bazaar|bazar|बाज़ार|बाजार",i]["highway"!~"."]'],
+  car: ['nwr["shop"="car"]'],
 };
 
 const PHOTON = {
@@ -52,6 +61,15 @@ const PHOTON = {
   young: [['viewpoint', 'tourism:viewpoint'], ['bridge', '!amenity'], ['ghat', '!amenity'], ['ruins', 'historic:ruins'], ['waterfall']],
   mid: [['fort', 'historic'], ['monument', 'historic'], ['museum', 'tourism:museum'], ['bird sanctuary']],
   senior: [['garden', 'leisure:garden'], ['ghat'], ['monument', 'historic']],
+  river: [['ganga', 'waterway:river'], ['yamuna', 'waterway:river'], ['gomti', 'waterway:river'], ['ghaghara', 'waterway:river'], ['rapti', 'waterway:river'], ['betwa', 'waterway:river'], ['river', 'waterway:river'], ['ghat'], ['lake', 'natural:water']],
+  bridge: [['bridge'], ['setu'], ['pul']],
+  tree: [['banyan'], ['bargad'], ['peepal'], ['tree', 'natural:tree']],
+  art: [['art gallery'], ['lalit kala'], ['mural'], ['artwork', 'tourism:artwork'], ['museum', 'tourism:museum']],
+  party: [['party office', 'office:political_party'], ['bjp office'], ['samajwadi party office']],
+  police: [['police station', 'amenity:police'], ['thana', 'amenity:police']],
+  hospital: [['hospital', 'amenity:hospital'], ['medical college', 'amenity:hospital']],
+  fashion: [['bazaar'], ['clothes', 'shop:clothes'], ['tailor', 'shop:tailor']],
+  car: [['car showroom', 'shop:car'], ['mercedes', 'shop:car'], ['toyota', 'shop:car']],
 };
 
 const OCCUPATIONS = {
@@ -90,12 +108,16 @@ const makeQueue = (gap) => {
 };
 const queued = makeQueue(1100);
 
-const redditQueued = makeQueue(2500);
+const redditQueued = makeQueue(4000);
 
 async function reddit({ subs, q }) {
   if (!/^[A-Za-z0-9_+]+$/.test(subs || '')) throw new Error('bad subreddit list');
   const url = `https://www.reddit.com/r/${subs}/search.rss?q=${encodeURIComponent(q)}&restrict_sr=1&sort=relevance&t=all&limit=20`;
-  const xml = await redditQueued(() => get(url));
+  const xml = await redditQueued(() => get(url).catch(async (err) => {
+    if (!/429/.test(err.message)) throw err;
+    await new Promise((r) => setTimeout(r, 8000));
+    return get(url);
+  }));
   return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(([, e]) => ({
     title: tag(e, 'title'),
     url: e.match(/<link href="([^"]+)"/)?.[1] ? decode(e.match(/<link href="([^"]+)"/)[1]) : null,
@@ -108,12 +130,24 @@ async function reddit({ subs, q }) {
 async function news({ q }) {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
   const xml = await get(url);
-  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 25).map(([, i]) => ({
+  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 100).map(([, i]) => ({
     title: tag(i, 'title'), url: tag(i, 'link'), date: tag(i, 'pubDate'), source: tag(i, 'source'),
   }));
 }
 
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 let overpassDownUntil = 0;
+
+async function overpass(body) {
+  let failure;
+  for (const url of OVERPASS) {
+    try {
+      const text = await get(url, { method: 'POST', body: new URLSearchParams({ data: body }), headers: { 'User-Agent': 'SurviveUP/0.1', Accept: '*/*' }, signal: AbortSignal.timeout(12000) });
+      return JSON.parse(text);
+    } catch (err) { failure = err; }
+  }
+  throw failure;
+}
 
 async function osm({ key, lat, lng, r }) {
   const filters = OSM[key];
@@ -122,8 +156,7 @@ async function osm({ key, lat, lng, r }) {
   const body = `[out:json][timeout:25];(${filters.map((f) => `${f}(around:${ra},${la},${lo});`).join('')});out center tags 120;`;
   if (Date.now() < overpassDownUntil) return photon(key, la, lo, ra);
   try {
-    const text = await get('https://overpass-api.de/api/interpreter', { method: 'POST', body: new URLSearchParams({ data: body }), headers: { 'User-Agent': 'SurviveUP/0.1', Accept: '*/*' }, signal: AbortSignal.timeout(12000) });
-    const found = JSON.parse(text).elements.map((e) => ({
+    const found = (await overpass(body)).elements.map((e) => ({
       id: `${e.type}/${e.id}`, lat: e.lat ?? e.center?.lat, lng: e.lon ?? e.center?.lon,
       name: e.tags?.name || e.tags?.['name:en'] || null, nameHi: e.tags?.['name:hi'] || null,
       phone: e.tags?.phone || e.tags?.['contact:phone'] || null,
@@ -156,7 +189,7 @@ async function photon(key, lat, lng, radius) {
       kind: p.osm_value || null, addr: [p.street, p.district, p.city].filter(Boolean).join(', ') || null,
       km: Math.hypot((la - lat) * 111, (lo - lng) * 111 * Math.cos(lat * Math.PI / 180)),
     };
-  }).filter((p) => p.km * 1000 <= radius && !seen.has(p.id) && seen.add(p.id));
+  }).filter((p) => p.km * 1000 <= radius && !seen.has(p.id) && seen.add(p.id) && (key !== 'river' || p.kind !== 'village'));
 }
 
 async function people({ qid, type }) {
@@ -180,7 +213,149 @@ async function people({ qid, type }) {
   })).slice(0, 12);
 }
 
-const API = { reddit, news, osm, people };
+const wikidata = async (q) => JSON.parse(await get(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(q)}`)).results.bindings;
+const checkQid = (qid) => { if (!/^Q\d+$/.test(qid || '')) throw new Error('bad district id'); };
+const year = (v) => v?.match(/^-?\d+/)?.[0] || null;
+const firstBy = (rows, key) => { const seen = new Set(); return rows.filter((r) => !seen.has(r[key].value) && seen.add(r[key].value)); };
+
+async function events({ qid }) {
+  checkQid(qid);
+  const rows = await wikidata(`SELECT ?e ?eLabel ?eDescription ?when ?art WHERE {
+    ?l wdt:P131* wd:${qid}. ?e wdt:P276 ?l; wdt:P31 ?t.
+    VALUES ?t { wd:Q178561 wd:Q198 wd:Q124757 wd:Q2223653 wd:Q8065 wd:Q168983 wd:Q1190554 wd:Q1656682 wd:Q13418847 wd:Q3199915 wd:Q45382 wd:Q124734 wd:Q171558 wd:Q1261499 wd:Q3241045 wd:Q7278 wd:Q273120 wd:Q131569 }
+    OPTIONAL { ?e wdt:P585 ?when } OPTIONAL { ?e wdt:P580 ?when }
+    OPTIONAL { ?art schema:about ?e; schema:isPartOf <https://en.wikipedia.org/> }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  } LIMIT 80`);
+  return firstBy(rows, 'e').filter((b) => !/^Q\d+$/.test(b.eLabel.value)).map((b) => ({ name: b.eLabel.value, about: b.eDescription?.value || '', year: year(b.when?.value), url: b.art?.value || b.e.value }))
+    .sort((a, b) => (Number(a.year) || 9999) - (Number(b.year) || 9999));
+}
+
+async function films({ qid }) {
+  checkQid(qid);
+  const rows = await wikidata(`SELECT ?f ?fLabel ?date ?art WHERE {
+    ?l wdt:P131* wd:${qid}. { ?f wdt:P915 ?l } UNION { ?f wdt:P840 ?l }
+    ?f wdt:P31 wd:Q11424.
+    OPTIONAL { ?f wdt:P577 ?date }
+    OPTIONAL { ?art schema:about ?f; schema:isPartOf <https://en.wikipedia.org/> }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  } LIMIT 60`);
+  return firstBy(rows, 'f').map((b) => ({ name: b.fLabel.value, year: year(b.date?.value), url: b.art?.value || b.f.value })).sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+}
+
+async function companies({ qid }) {
+  checkQid(qid);
+  const rows = await wikidata(`SELECT ?c ?cLabel ?cDescription ?founded ?founderLabel ?art WHERE {
+    ?l wdt:P131* wd:${qid}. ?c wdt:P159 ?l; wdt:P31 ?t.
+    VALUES ?t { wd:Q4830453 wd:Q6881511 wd:Q783794 wd:Q891723 wd:Q1058914 wd:Q2995256 wd:Q22687 wd:Q1616075 wd:Q1589009 wd:Q219577 wd:Q270791 }
+    OPTIONAL { ?c wdt:P571 ?founded } OPTIONAL { ?c wdt:P112 ?founder }
+    OPTIONAL { ?art schema:about ?c; schema:isPartOf <https://en.wikipedia.org/> }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  } LIMIT 40`);
+  return firstBy(rows, 'c').map((b) => ({ name: b.cLabel.value, about: b.cDescription?.value || '', year: year(b.founded?.value), founder: b.founderLabel?.value || null, url: b.art?.value || b.c.value }));
+}
+
+const coords = ({ lat, lng }) => {
+  const [la, lo] = [Number(lat), Number(lng)];
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) throw new Error('bad location');
+  return [la, lo];
+};
+
+// Wikipedia articles with coordinates, nearest first
+async function nearby(params) {
+  const [la, lo] = coords(params);
+  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&generator=geosearch&ggscoord=${la}|${lo}&ggsradius=10000&ggslimit=50&prop=coordinates|pageimages|description&colimit=50&piprop=thumbnail&pithumbsize=200&pilimit=50`;
+  const pages = Object.values(JSON.parse(await get(url)).query?.pages || {});
+  return pages.filter((p) => p.coordinates).sort((a, b) => a.index - b.index).map((p) => ({
+    id: String(p.pageid), name: p.title, about: p.description || '', img: p.thumbnail?.source || null,
+    lat: p.coordinates[0].lat, lng: p.coordinates[0].lon, url: `https://en.wikipedia.org/?curid=${p.pageid}`,
+  }));
+}
+
+async function weather(params) {
+  const [la, lo] = coords(params);
+  const [w, a] = await Promise.all([
+    get(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m`),
+    get(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${la}&longitude=${lo}&current=us_aqi,pm2_5`),
+  ]);
+  const cw = JSON.parse(w).current;
+  const ca = JSON.parse(a).current;
+  return { temp: cw.temperature_2m, feels: cw.apparent_temperature, code: cw.weather_code, wind: cw.wind_speed_10m, aqi: ca.us_aqi, pm25: ca.pm2_5 };
+}
+
+// Counts names in headlines. This measures press attention, not support or population.
+const METERS = {
+  party: {
+    query: (p) => `${p} (BJP OR "Samajwadi Party" OR Congress OR BSP OR RLD) when:30d`,
+    names: { BJP: /\bBJP\b/, SP: /Samajwadi|Akhilesh|\bSP (?:chief|MP|MLA|leader|candidate|worker|workers|govt|government|supremo)\b/, INC: /Congress|\bINC\b|Rahul Gandhi/, BSP: /\bBSP\b|Mayawati/, RLD: /\bRLD\b|Jayant Chaudhary/ },
+  },
+  samaj: {
+    query: (p) => `${p} (caste OR Yadav OR Dalit OR Jat OR Thakur OR Brahmin OR Muslim OR Kurmi OR Nishad OR Gurjar) (vote OR politics OR election) when:90d`,
+    names: { Muslim: /Muslim/i, Dalit: /Dalit|Jatav|Pasi/i, Yadav: /Yadavs\b|Yadav (?:vote|voter|community|samaj)|Muslim-Yadav/, Brahmin: /Brahmin/i, Thakur: /Thakurs\b|Thakur (?:vote|voter|community|samaj)|Rajput/, Jat: /\bJats\b|\bJat (?:vote|voter|community|samaj|leader|belt)/, Kurmi: /Kurmi/i, Nishad: /Nishads\b|Nishad (?:vote|voter|community|samaj)/, Gurjar: /Gurjars\b|Gujjars\b|(?:Gurjar|Gujjar) (?:vote|voter|community|samaj)/ },
+  },
+};
+async function meter({ place, kind }) {
+  const m = METERS[kind];
+  if (!m || !place) throw new Error('bad meter query');
+  const items = await news({ q: m.query(place) });
+  const counts = Object.fromEntries(Object.entries(m.names).map(([k, re]) => [k, items.filter((n) => re.test(n.title)).length]));
+  return { total: items.length, counts };
+}
+
+const crore = (title) => {
+  const m = title.match(/(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d+)?)\s*-?\s*(lakh\s*crore|crore|cr\b|lakh|billion)/i);
+  if (!m) return null;
+  const n = Number(m[1].replace(/,/g, ''));
+  const unit = m[2].toLowerCase().replace(/\s+/g, ' ');
+  return unit === 'lakh crore' ? n * 1e5 : unit === 'lakh' ? n / 100 : unit === 'billion' ? n * 100 : n;
+};
+const PAYERS = [
+  ['Centre', /\bcentre\b|central govt|union|\bPM\b|modi|NHAI|railway|gadkari/i],
+  ['State', /\bCM\b|yogi|adityanath|state govt|UP govt|U\.?P\.? government|UPEIDA|cabinet/i],
+  ['Local body', /nagar nigam|municipal|development authority|\b[A-Z]DA\b|panchayat|MLA fund|MPLAD|smart city/i],
+];
+async function money({ place }) {
+  if (!place) throw new Error('bad money query');
+  const items = await news({ q: `${place} crore (project OR scheme OR sanctioned OR budget OR inaugurated) when:90d` });
+  const seen = new Set();
+  return items.map((n) => ({ ...n, crore: crore(n.title), payer: PAYERS.find(([, re]) => re.test(n.title))?.[0] || 'Not stated' }))
+    .filter((n) => n.crore && !seen.has(n.title) && seen.add(n.title)).sort((a, b) => b.crore - a.crore).slice(0, 15);
+}
+
+// Pins a headline to a named place inside it when Photon can find one close to the city.
+const nearHere = async (name, la, lo, km) => {
+  const url = `https://photon.komoot.io/api/?lat=${la}&lon=${lo}&limit=3&location_bias_scale=0.1&osm_tag=place&q=${encodeURIComponent(name)}`;
+  const hits = JSON.parse(await queued(() => get(url))).features;
+  const hit = hits.find((f) => f.properties.name?.toLowerCase() === name.toLowerCase());
+  if (!hit) return null;
+  const [lng, lat] = hit.geometry.coordinates;
+  return Math.hypot((lat - la) * 111, (lng - lo) * 111 * Math.cos(la * Math.PI / 180)) <= km ? { lat, lng } : null;
+};
+async function geonews(params) {
+  const [la, lo] = coords(params);
+  const items = (await news({ q: params.q })).slice(0, 10);
+  const city = String(params.city || '').toLowerCase().split(' ')[0];
+  const out = [];
+  for (const n of items) {
+    // The source name sits after the last dash in a Google News title
+    const head = n.title.replace(/\s-\s[^-]*$/, '');
+    const name = head.match(/\b(?:in|at|near|from)\s+([A-Z][a-z]{3,}(?:\s[A-Z][a-z]{3,})?)/)?.[1];
+    let at = null;
+    if (name && !name.toLowerCase().includes(city)) {
+      try { at = await nearHere(name, la, lo, 35); } catch { /* Photon busy, the pin stays on the city */ }
+    }
+    out.push({ url: n.url, place: at ? name : null, ...at });
+  }
+  return out;
+}
+
+async function locality(params) {
+  const [la, lo] = coords(params);
+  const p = JSON.parse(await get(`https://photon.komoot.io/reverse?lat=${la}&lon=${lo}&limit=1`)).features[0]?.properties;
+  return { name: p?.district || p?.locality || p?.suburb || p?.name || null, city: p?.city || null };
+}
+
+const API = { reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');

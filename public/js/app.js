@@ -1,4 +1,4 @@
-import { PARTIES, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
+import { PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -19,7 +19,7 @@ const timeAgo = (d) => {
   return Number.isNaN(+t) ? '' : t.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const state = { age: Number(store.get('age')) || null, mode: 'party', districts: {}, current: null, origin: null, geo: null };
+const state = { age: Number(store.get('age')) || null, mode: 'party', districts: {}, netas: {}, current: null, origin: null, geo: null };
 
 /* TV intro */
 function intro() {
@@ -75,6 +75,13 @@ const SHARE_BINS = [
   { max: 101, color: '#4b1a7f', label: '40% and up' },
 ];
 
+const partyKey = (p) => NETA_PARTY[p] || p;
+function mlaCounts(name) {
+  const counts = {};
+  (state.netas[name] || []).forEach((m) => { const k = partyKey(m.party); counts[k] = (counts[k] || 0) + 1; });
+  return Object.entries(counts).sort((x, y) => y[1] - x[1]);
+}
+
 function style(feature) {
   const d = state.districts[feature.properties.district];
   let fill = '#777';
@@ -82,6 +89,10 @@ function style(feature) {
   if (state.mode === 'party') {
     fill = PARTIES[d.seats[0]?.party]?.color || '#777';
     if (new Set(d.seats.map((s) => s.party)).size > 1) dash = '6 5';
+  } else if (state.mode === 'mla') {
+    const counts = mlaCounts(d.name);
+    fill = PARTIES[counts[0]?.[0]]?.color || '#777';
+    if (counts.length > 1) dash = '6 5';
   } else if (d.census) {
     fill = SHARE_BINS.find((b) => d.census.share < b.max).color;
   }
@@ -96,17 +107,22 @@ function tipFor(name) {
   if (state.mode === 'party') {
     return `<b>${esc(name)}</b>${d.seats.map((s) => `${esc(s.seat)}: ${esc(PARTIES[s.party]?.name || s.party)}`).join('<br>')}`;
   }
+  if (state.mode === 'mla') {
+    return `<b>${esc(name)}</b>${mlaCounts(name).map(([p, n]) => `${esc(PARTIES[p]?.name || p)}: ${n}`).join('<br>')}`;
+  }
   const share = d.census ? `Muslim ${d.census.share}%, mostly Hindu otherwise` : 'No separate 2011 figure';
   return `<b>${esc(name)}</b>${share}${BLOCS[name] ? `<br>Press-named blocs: ${esc(BLOCS[name])}` : ''}`;
 }
 
 function renderLegend() {
+  const named = (keys) => keys.map((k) => [PARTIES[k].color, PARTIES[k].name]);
   const items = state.mode === 'party'
-    ? Object.values(PARTIES).map((p) => [p.color, p.name])
-    : [...SHARE_BINS.map((b) => [b.color, b.label]), ['#777', 'No separate figure']];
+    ? named(['BJP', 'SP', 'INC', 'RLD', 'ADS', 'ASP'])
+    : state.mode === 'mla' ? named(['BJP', 'SP', 'ADS', 'RLD', 'SBSP', 'NISHAD', 'INC', 'JDL', 'BSP']) : [...SHARE_BINS.map((b) => [b.color, b.label]), ['#777', 'No separate figure']];
   $('#legend').innerHTML = items.map(([c, l]) => `<div><i style="background:${c}"></i>${esc(l)}</div>`).join('');
   $('#legendNote').textContent = state.mode === 'party'
     ? 'Winner of the 2024 Lok Sabha seat for each district. Dashed outline: seats in this district went to different parties.'
+    : state.mode === 'mla' ? 'Party with the most MLAs in each district, from the 2022 election and later bye-elections. Dashed outline: the district is split.'
     : 'Muslim share from Census 2011, district level. India has published no caste count since 1931, so caste blocs are what the press names, shown on hover.';
 }
 
@@ -120,8 +136,11 @@ async function initMap() {
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { pane: 'labels', maxZoom: 19 }).addTo(map);
   state.pins = L.layerGroup().addTo(map);
 
-  const [districts, geo] = await Promise.all([fetch('data/districts.json').then((r) => r.json()), fetch('data/up.geojson').then((r) => r.json())]);
+  state.newsPins = L.layerGroup().addTo(map);
+  state.statePins = L.layerGroup().addTo(map);
+  const [districts, geo, netas] = await Promise.all(['data/districts.json', 'data/up.geojson', 'data/netas.json'].map((u) => fetch(u).then((r) => r.json())));
   state.districts = districts;
+  state.netas = netas;
   state.geo = geo;
   state.layer = L.geoJSON(geo, {
     style,
@@ -145,6 +164,39 @@ async function initMap() {
     renderLegend();
   }));
   $('#nearMe').addEventListener('click', nearMe);
+  $('#todayNews').addEventListener('change', showStatePins);
+  loadStateNews();
+}
+
+/* Today's news across the state */
+const namePattern = (n) => new RegExp(`\\b${(SEARCH_NAME[n] || n).replace(/[^\w ]/g, '')}\\b`, 'i');
+function showStatePins() {
+  const on = $('#todayNews').checked && !state.current;
+  if (on) state.statePins.addTo(state.map); else state.statePins.remove();
+}
+async function loadStateNews() {
+  const msg = $('#todayMsg');
+  try {
+    const items = await api('news', { q: 'Uttar Pradesh when:1d' });
+    const names = Object.keys(state.districts).map((n) => [n, namePattern(n)]);
+    const seen = {};
+    let count = 0;
+    items.forEach((n) => {
+      const hit = names.find(([, re]) => re.test(n.title))?.[0];
+      if (!hit) return;
+      const d = state.districts[hit];
+      // Several stories in one district fan out around its centre
+      const i = (seen[hit] = (seen[hit] || 0) + 1) - 1;
+      const pos = [d.lat + 0.07 * i * Math.sin(i * 2.4), d.lng + 0.07 * i * Math.cos(i * 2.4)];
+      L.marker(pos, { icon: pinIcon('news') }).addTo(state.statePins)
+        .bindPopup(`<b>${esc(hit)}</b><br><a href="${safeUrl(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><br><button class="link-open" data-city="${esc(hit)}">Open ${esc(hit)}</button>`);
+      count += 1;
+    });
+    state.map.on('popupopen', (e) => {
+      e.popup.getElement()?.querySelector('[data-city]')?.addEventListener('click', (ev) => openCity(ev.target.dataset.city));
+    });
+    msg.textContent = `${count} stories from the last day, pinned to the district named in the headline.`;
+  } catch (err) { msg.textContent = `Could not load today's news: ${err.message}`; }
 }
 
 function inRing(lng, lat, ring) {
@@ -170,6 +222,7 @@ function nearMe() {
     if (!name) { msg.textContent = 'You are outside Uttar Pradesh. Pick a district instead.'; return; }
     msg.textContent = '';
     openCity(name, { lat, lng });
+    api('locality', { lat, lng }).then((p) => { if (p.name && state.current === name) { const el = $('#hereNow'); if (el) { el.hidden = false; $('dd', el).textContent = p.name; } } }).catch(() => {});
   }, () => { msg.textContent = 'Location was blocked. Pick a district instead.'; }, { timeout: 10000 });
 }
 
@@ -187,6 +240,9 @@ const QUICK = [
   { id: 'meat', label: 'Meat shop', keys: () => ['meat'], line: 'Buy meat at' },
   { id: 'mall', label: 'Big malls', keys: () => ['mall'], line: 'Walk around' },
   { id: 'food', label: 'Famous food', keys: () => ['food'], line: 'Eat at' },
+  { id: 'fashion', label: 'Keep fashion weird', keys: () => ['fashion'], line: 'Go dig through' },
+  { id: 'police', label: 'Nearest thana', keys: () => ['police'], line: 'Police station:' },
+  { id: 'hospital', label: 'Hospital', keys: () => ['hospital'], line: 'Hospital:' },
 ];
 
 function pinIcon(cls = '') { return L.divIcon({ className: '', html: `<div class="pin ${cls}"></div>`, iconSize: [14, 14] }); }
@@ -290,15 +346,30 @@ async function newsBlock(el, q, { pins = false } = {}) {
       const at = state.districts[hit] || d;
       return { ...n, place: at.name, lat: at.lat, lng: at.lng };
     });
+    const drawNews = () => {
+      state.newsPins.clearLayers();
+      located.forEach((x, i) => L.marker([x.lat + 0.006 * i * Math.sin(i * 2.4), x.lng + 0.006 * i * Math.cos(i * 2.4)], { icon: pinIcon('news') }).addTo(state.newsPins).bindPopup(`<b>${esc(x.place)}</b><br><a href="${safeUrl(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`));
+    };
     el.innerHTML = `<ul class="list">${located.map((n, i) => `<li><a href="${safeUrl(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>
       <span class="meta">${esc(n.source)}, ${timeAgo(n.date)}${pins ? `, <button class="link" data-news="${i}">show ${esc(n.place)}</button>` : ''}</span></li>`).join('')}</ul>`;
     if (pins) {
+      drawNews();
       el.querySelectorAll('[data-news]').forEach((b) => b.addEventListener('click', () => {
         const n = located[Number(b.dataset.news)];
-        state.pins.clearLayers();
-        located.forEach((x) => L.marker([x.lat, x.lng], { icon: pinIcon('news') }).addTo(state.pins).bindPopup(`<a href="${safeUrl(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`));
-        flyVisible(n.lat, n.lng, 10);
+        flyVisible(n.lat, n.lng, 12);
       }));
+      const city = state.current;
+      api('geonews', { q, lat: d.lat, lng: d.lng, city: d.city.en || city }).then((spots) => {
+        if (state.current !== city) return;
+        spots.forEach((s) => {
+          const i = located.findIndex((n) => n.url === s.url);
+          if (i < 0 || !s.place) return;
+          Object.assign(located[i], { place: s.place, lat: s.lat, lng: s.lng });
+          const b = $(`[data-news="${i}"]`, el);
+          if (b) b.textContent = `show ${s.place}`;
+        });
+        drawNews();
+      }).catch(() => {});
     }
   } catch (err) { el.innerHTML = failed('news', err); }
 }
@@ -313,6 +384,94 @@ async function peopleBlock(el, type) {
   } catch (err) { el.innerHTML = failed('names', err); }
 }
 
+/* Tabs that load their content when picked */
+function tabs(el, items, show) {
+  el.innerHTML = `<div class="tags">${items.map(([id, label], i) => `<button data-tab="${esc(id)}" aria-pressed="${i === 0}"><span>${esc(label)}</span></button>`).join('')}</div><div class="tab-body"></div>`;
+  const open = (id) => {
+    el.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === id));
+    $('.tab-body', el).innerHTML = 'Loading…';
+    show(id, $('.tab-body', el));
+  };
+  el.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => open(b.dataset.tab)));
+  open(items[0][0]);
+}
+
+/* Weather and air */
+const SKY = [[0, 'Clear'], [3, 'Cloudy'], [48, 'Fog'], [67, 'Rain'], [77, 'Snow'], [82, 'Showers'], [99, 'Thunderstorm']];
+const AQI = [[50, 'Good'], [100, 'Moderate'], [150, 'Bad for sensitive people'], [200, 'Unhealthy, wear a mask'], [300, 'Very unhealthy, stay in'], [999, 'Hazardous, stay in']];
+async function weatherBlock(el) {
+  const { lat, lng } = state.origin;
+  try {
+    const w = await api('weather', { lat, lng });
+    el.innerHTML = `<div><dt>Temperature</dt><dd>${Math.round(w.temp)}°C<small>Feels like ${Math.round(w.feels)}°C, ${esc(SKY.find(([c]) => w.code <= c)?.[1] || '')}</small></dd></div>
+      <div><dt>Air quality (US AQI)</dt><dd>${esc(w.aqi)}<small>${esc(AQI.find(([n]) => w.aqi <= n)?.[1] || '')}</small></dd></div>`;
+  } catch (err) { el.innerHTML = failed('weather', err); }
+}
+
+/* Headline meters */
+async function meterBlock(el, place, kind) {
+  try {
+    const m = await api('meter', { place, kind });
+    const rows = Object.entries(m.counts).filter(([, n]) => n).sort((x, y) => y[1] - x[1]);
+    if (!rows.length) { el.innerHTML = '<p class="empty">No recent headlines name any of these here.</p>'; return; }
+    const top = rows[0][1];
+    el.innerHTML = `<div class="bars">${rows.map(([k, n]) => `<div><span>${esc(PARTIES[k]?.name || k)}</span><i style="width:${(100 * n) / top}%"></i><span>${n}</span></div>`).join('')}</div>`;
+  } catch (err) { el.innerHTML = failed('the meter', err); }
+}
+
+/* Money in the headlines */
+const PAYER_COLOURS = { Centre: '#f6c400', State: '#d3201f', 'Local body': '#1e7f3a', 'Not stated': '#8a8a8a' };
+const fmtCr = (n) => (n >= 100000 ? `₹${(n / 100000).toFixed(2)} lakh cr` : n >= 1 ? `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 1 })} cr` : `₹${(n * 100).toFixed(0)} lakh`);
+async function moneyBlock(el, place) {
+  try {
+    const items = await api('money', { place });
+    if (!items.length) { el.innerHTML = '<p class="empty">No headline in the last 90 days names a rupee amount here.</p>'; return; }
+    const totals = {};
+    items.forEach((n) => { totals[n.payer] = (totals[n.payer] || 0) + n.crore; });
+    const sum = Object.values(totals).reduce((x, y) => x + y, 0);
+    el.innerHTML = `<div class="flow" role="img" aria-label="Share of reported money by who the headline names">${Object.entries(totals).map(([k, v]) => `<i style="width:${(100 * v) / sum}%;background:${PAYER_COLOURS[k]}"></i>`).join('')}</div>
+      <div class="flow-key">${Object.entries(totals).map(([k, v]) => `<span><i style="background:${PAYER_COLOURS[k]}"></i>${esc(k)}: ${fmtCr(v)}</span>`).join('')}</div>
+      <ul class="list">${items.map((n) => `<li><span class="amount">${fmtCr(n.crore)}</span><a href="${safeUrl(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="meta">${esc(n.payer)}, ${esc(n.source)}, ${timeAgo(n.date)}</span></li>`).join('')}</ul>`;
+  } catch (err) { el.innerHTML = failed('money news', err); }
+}
+
+/* Netas */
+const mynetaUrl = (id) => `https://www.myneta.info/uttarpradesh2022/candidate.php?candidate_id=${Number(id)}`;
+function netaList(name) {
+  const list = state.netas[name] || [];
+  if (!list.length) return '<p class="empty">No MLA record for this district.</p>';
+  const withCases = list.filter((m) => m.cases).length;
+  return `<p class="neta-sum">${list.length} MLAs. ${withCases} of them declared criminal cases in their own affidavits.</p>
+    <ul class="list">${list.map((m) => { const k = partyKey(m.party); return `<li><i class="neta-party" style="background:${PARTIES[k]?.color || '#777'}"></i><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a>, ${esc(m.seat)}${m.bye ? ' (bye-election)' : ''}
+      <span class="meta">${esc(PARTIES[k]?.name || m.party)}, ${m.cases} declared ${m.cases === 1 ? 'case' : 'cases'}, assets ${m.assets == null ? 'on MyNeta' : fmtCr(m.assets / 1e7)}, ${esc(m.edu)}</span></li>`; }).join('')}</ul>`;
+}
+
+/* Wikipedia, Wikidata lists */
+async function listBlock(el, route, what, row) {
+  const d = state.districts[state.current];
+  if (!d.qid) { el.innerHTML = `<p class="empty">Wikidata has no entry for this district, so no ${esc(what)}.</p>`; return; }
+  try {
+    const list = await api(route, { qid: d.qid });
+    el.innerHTML = list.length ? `<ul class="list">${list.slice(0, 14).map(row).join('')}</ul>` : `<p class="empty">Wikidata lists no ${esc(what)} here yet.</p>`;
+  } catch (err) { el.innerHTML = failed(what, err); }
+}
+const wdLink = (x) => `<a href="${safeUrl(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>`;
+
+async function nearbyBlock(el) {
+  const { lat, lng } = state.origin;
+  try {
+    const list = (await api('nearby', { lat, lng })).filter((p) => !/district$|^Lok Sabha|constituency/i.test(p.name)).slice(0, 18);
+    if (!list.length) { el.innerHTML = '<p class="empty">Wikipedia has no articles within 10 km of here.</p>'; return; }
+    el.innerHTML = `<div class="cards">${list.map((p, i) => `<button data-spot="${i}">${p.img ? `<img loading="lazy" src="${safeUrl(p.img)}" alt="">` : '<div class="noimg"></div>'}<b>${esc(p.name)}</b><span>${esc(p.about)}</span></button>`).join('')}</div>`;
+    el.querySelectorAll('[data-spot]').forEach((b) => b.addEventListener('click', () => {
+      const p = list[Number(b.dataset.spot)];
+      state.pins.clearLayers();
+      L.marker([p.lat, p.lng], { icon: pinIcon() }).addTo(state.pins).bindPopup(`<b>${esc(p.name)}</b><br><a href="${safeUrl(p.url)}" target="_blank" rel="noopener">Read on Wikipedia</a><br><a href="${dirLink(p)}" target="_blank" rel="noopener">Get directions</a>`).openPopup();
+      focusPlace(p);
+    }));
+  } catch (err) { el.innerHTML = failed('landmarks', err); }
+}
+
 /* Dossier */
 const loader = (fn) => ({ fn, done: false });
 
@@ -322,12 +481,16 @@ function openCity(name, origin) {
   state.origin = origin || { lat: d.lat, lng: d.lng };
   state.layer.setStyle(style);
   state.pins.clearLayers();
+  state.newsPins.clearLayers();
+  showStatePins();
   if (origin) L.marker([origin.lat, origin.lng], { icon: pinIcon('hot') }).addTo(state.pins).bindPopup('You are here');
   $('#districtPick').value = name;
 
   const search = SEARCH_NAME[name] || d.city.en || name;
   const seats = d.seats.map((s) => `${esc(s.seat)}: ${esc(s.mp || 'MP')} (${esc(PARTIES[s.party]?.name || s.party)})`).join('<br>');
-  const plate = Object.entries(RTO).find(([, v]) => v === name)?.[0];
+  const plate = Object.entries(RTO).find(([, v]) => v === name || v === SEARCH_NAME[name])?.[0];
+  const mapsUrl = (q) => `https://www.google.com/maps/search/${encodeURIComponent(q)}`;
+  const underTabs = [...UNDER_TABS].sort((x, y) => y.ages.includes(ageBand()) - x.ages.includes(ageBand()));
   const projects = PROJECTS.filter((p) => p.districts.includes(name));
   const hist = HISTORY[name] || [];
   const newsUrl = (q) => `https://news.google.com/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
@@ -345,14 +508,25 @@ function openCity(name, origin) {
       ${d.city.ur ? `<span class="city-ur" lang="ur" dir="rtl">${esc(d.city.ur)}</span>` : ''}
     </div>
     <dl class="facts">
+      <div id="hereNow" hidden><dt>You are in</dt><dd></dd></div>
       <div><dt>District</dt><dd>${esc(name)}</dd></div>
       ${OLD_NAMES[name] ? `<div><dt>Older names</dt><dd>${esc(OLD_NAMES[name])}</dd></div>` : ''}
       <div><dt>2024 Lok Sabha winner</dt><dd>${seats}</dd></div>
+      <div><dt>MLAs by party</dt><dd>${mlaCounts(name).map(([p, n]) => `${esc(PARTIES[p]?.name || p)} ${n}`).join(', ')}</dd></div>
+      ${ODOP[name] ? `<div><dt>Known for making</dt><dd>${esc(ODOP[name])}</dd></div>` : ''}
       ${d.census ? `<div><dt>Census 2011</dt><dd>${(d.census.pop / 1e5).toFixed(1)} lakh people, ${d.census.share}% Muslim</dd></div>` : ''}
       ${BLOCS[name] ? `<div><dt>Blocs the press names</dt><dd>${esc(BLOCS[name])}</dd></div>` : ''}
       ${plate ? `<div><dt>Plate code</dt><dd>UP ${plate}</dd></div>` : ''}
     </dl>
   </header>
+
+  <section class="sec sec-red" data-load="survive">
+    <img src="img/17.jpg" alt="Comic lettering: Ahhhhh!">
+    <div><h2>Survive today</h2>
+      <dl class="now" id="now">Loading…</dl>
+      <div class="help">${HELPLINES.map(([n, l]) => `<a href="tel:${n}"><b>${n}</b><span>${esc(l)}</span></a>`).join('')}</div>
+    </div>
+  </section>
 
   <section class="quick">
     <h2>Abhi kya karna hai?</h2>
@@ -362,7 +536,24 @@ function openCity(name, origin) {
 
   <section class="sec sec-amber" data-load="news">
     <img src="img/18.jpg" alt="Wake up, on an old phone screen">
-    <div><h2>News in ${esc(search)}</h2><div id="news">Loading headlines…</div></div>
+    <div><h2>News in ${esc(search)}</h2><div id="news">Loading headlines…</div>
+      <h3>Who has the rola in the headlines</h3>
+      <p class="lead">Counts names in the last 30 days of headlines. This shows who the press writes about, which is different from who has support.</p>
+      <div id="meterParty">Loading…</div>
+      <h3>Which samaj the political news names</h3>
+      <p class="lead">Last 90 days, district level only. Headline mentions, not population.</p>
+      <div id="meterSamaj">Loading…</div>
+    </div>
+  </section>
+
+  <section class="sec sec-red" data-load="netas">
+    <img src="img/12.jpg" alt="Film-style poster with a burning car">
+    <div><h2>Netas</h2>
+      <p class="lead">Their own 2022 election affidavits, collected by ADR on MyNeta. Declared cases are not convictions. Figures may have changed since.</p>
+      <div id="netaList">${netaList(name)}</div>
+      <h3>Party offices on the map</h3><div id="partyOffices">Loading…</div>
+      <h3>Netas in the news</h3><div id="netaNews">Loading…</div>
+    </div>
   </section>
 
   <section class="sec sec-paper" data-load="lawyers">
@@ -370,6 +561,10 @@ function openCity(name, origin) {
     <div><h2>Lawyers</h2>
       <p class="lead">Nobody publishes who wins the most, so nothing here is a ranking. These are mapped offices with listed numbers, real case news, and lawyers people actually recommend.</p>
       <p class="lead"><b>Free legal aid: call NALSA on 15100.</b> <a href="https://services.ecourts.gov.in/" target="_blank" rel="noopener">Check any lawyer's cases on eCourts</a>.</p>
+      <h3>Check a lawyer's record</h3>
+      <div class="lookup"><input id="lawyerName" aria-label="Lawyer's name" placeholder="Type a lawyer's name"><a id="lawyerGo" href="https://indiankanoon.org/" target="_blank" rel="noopener">Search judgments</a></div>
+      <p class="muted">Indian Kanoon shows judgments naming that lawyer. Read them to see who won, since no site keeps a score.</p>
+      <h3>By type of case</h3><div id="lawCats"></div>
       <h3>Offices and courts on the map</h3><div id="lawyers">Loading…</div>
       <h3>Cases against netas in the news</h3><div id="lawNews">Loading…</div>
       <h3>Reddit recommendations</h3><div id="lawReddit">Loading…</div>
@@ -383,6 +578,10 @@ function openCity(name, origin) {
       ${projects.length ? projects.map((p) => `<div class="project"><b>${esc(p.name)}</b>${esc(p.cost)}${p.km ? `, ${esc(p.km)}` : ''}<br>
         <a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">Background</a>
         <a href="${newsUrl(`${p.name} progress`)}" target="_blank" rel="noopener">Latest status</a></div>`).join('') : '<p class="lead">No big state project on this list passes through here. Local work shows up in the news below.</p>'}
+      <h3>Money named in headlines</h3>
+      <p class="muted">Rupee amounts in the last 90 days of news, grouped by who the headline names. This is announced money, and a headline can repeat or overlap another.</p>
+      <div id="moneyNews">Loading…</div>
+      <h3>Follow the rupee yourself</h3>
       <p class="muted">Costs are press-reported totals and may have changed. No public feed gives rupee-by-rupee spending, so use these portals or file an RTI:</p>
       <ul class="list">${MONEY_LINKS.map((m) => `<li><a href="${m.url}" target="_blank" rel="noopener">${esc(m.label)}</a></li>`).join('')}</ul>
       <h3>Live project news</h3><div id="projectNews">Loading…</div>
@@ -405,7 +604,9 @@ function openCity(name, origin) {
     <div><h2>Underrated</h2>
       <p class="lead">Age ${esc(state.age || '?')} here, so you get ${AGE_COPY[ageBand()]}.</p>
       <div id="under">Loading…</div>
-      <h3>From Reddit, by type</h3><div id="underReddit">Loading…</div>
+      <h3>Rivers, pul, trees, paintings</h3><div id="underTabs"></div>
+      <h3>Near here on Wikipedia</h3><div id="nearby">Loading…</div>
+      <h3>Popular areas on Reddit</h3><div id="underReddit"></div>
     </div>
   </section>
 
@@ -415,7 +616,14 @@ function openCity(name, origin) {
       <p class="lead">Birthplaces from Wikidata. Home addresses of living people stay off this site.</p>
       <h3>Actors</h3><div id="pActor">Loading…</div>
       <h3>Netas</h3><div id="pNeta">Loading…</div>
-      <h3>Business names and old money</h3><div id="pBusiness">Loading…</div>
+    </div>
+  </section>
+
+  <section class="sec sec-paper" data-load="films">
+    <img src="img/1.jpg" alt="Black and white photo of a man with a cigarette">
+    <div><h2>Filmy</h2>
+      <h3>Films shot or set here</h3><div id="films">Loading…</div>
+      <h3>Stars around town, in the news</h3><div id="starNews">Loading…</div>
     </div>
   </section>
 
@@ -424,7 +632,8 @@ function openCity(name, origin) {
     <div><h2>Sound, art, history</h2>
       <div id="wiki">Loading…</div>
       ${MUSIC[name] ? `<h3>Music from here</h3><p>${esc(MUSIC[name])}</p>` : ''}
-      ${CRAFT[name] ? `<h3>Art and craft</h3><p>${esc(CRAFT[name])}</p>` : ''}
+      ${CRAFT[name] || ODOP[name] ? `<h3>Art and craft</h3><p>${esc([...new Set([ODOP[name], CRAFT[name]].filter(Boolean))].join('. '))}</p>` : ''}
+      <h3>Moments on record</h3><div id="events">Loading…</div>
       ${hist.length ? `<h3>What happened here</h3><ul class="list">${hist.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
       <h3>Musicians</h3><div id="pMusic">Loading…</div>
       <h3>Writers and poets</h3><div id="pArt">Loading…</div>
@@ -440,23 +649,46 @@ function openCity(name, origin) {
     </div>
   </section>
 
-  <section class="sec sec-amber">
+  <section class="sec sec-green" data-load="fashion">
+    <img src="img/14.jpg" alt="Poster: Keep fashion weird">
+    <div><h2>Kapde</h2>
+      <h3>Bazaars, tailors, clothes shops</h3><div id="fashion">Loading…</div>
+      <h3>What Reddit says</h3><div id="fashionReddit">Loading…</div>
+    </div>
+  </section>
+
+  <section class="sec sec-black" data-load="rich">
+    <img src="img/2.jpg" alt="Playing card: No pressure, no diamonds">
+    <div><h2>Old money</h2>
+      <h3>Companies based here</h3><div id="companies">Loading…</div>
+      <h3>Richest MLAs by their own affidavit</h3>
+      <ul class="list">${[...(state.netas[name] || [])].filter((m) => m.assets).slice(0, 3).map((m) => `<li><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a><span class="meta">${fmtCr(m.assets / 1e7)}, ${esc(m.seat)}</span></li>`).join('')}</ul>
+      <h3>Business people born here</h3><div id="richPeople">Loading…</div>
+      <h3>Rich-list news</h3><div id="richNews">Loading…</div>
+    </div>
+  </section>
+
+  <section class="sec sec-amber" data-load="cars">
     <img src="img/20.jpg" alt="Black SUV with tinted windows">
     <div><h2>Big cars</h2>
       <p class="lead">Type a plate to see where it was registered. Owner lookups stay out: tying a plate to a person is how people get stalked.</p>
       <div class="plate"><input id="plateIn" aria-label="Number plate" placeholder="UP32 AB 1234" maxlength="13"><output id="plateOut"></output></div>
-      <h3>Rich-list news from ${esc(search)}</h3><div id="richNews"><button class="action" id="richBtn">Load the news</button></div>
+      <h3>Big-car showrooms</h3><div id="showrooms">Loading…</div>
+      <h3>VIP number auctions in the news</h3><div id="vipNews">Loading…</div>
     </div>
   </section>`;
 
-  $('#closeBtn').addEventListener('click', () => { box.hidden = true; state.current = null; state.layer.setStyle(style); });
+  $('#closeBtn').addEventListener('click', () => { box.hidden = true; state.current = null; state.newsPins.clearLayers(); showStatePins(); state.layer.setStyle(style); });
   box.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => runQuick(QUICK.find((q) => q.id === b.dataset.q), b)));
 
   $('#plateIn').addEventListener('input', (e) => {
     const m = e.target.value.toUpperCase().match(/^UP\s*(\d{2})/);
     $('#plateOut').textContent = !m ? (e.target.value.length > 3 ? 'Not a UP plate' : '') : RTO[Number(m[1])] ? `Registered at the ${RTO[Number(m[1])]} RTO` : 'Unknown UP code';
   });
-  $('#richBtn').addEventListener('click', () => newsBlock($('#richNews'), `${search} billionaire OR crorepati OR businessman family company`));
+  $('#lawyerName').addEventListener('input', (e) => {
+    const n = e.target.value.trim();
+    $('#lawyerGo').href = n ? `https://indiankanoon.org/search/?formInput=${encodeURIComponent(`"${n}" doctypes:allahabad`)}` : 'https://indiankanoon.org/';
+  });
 
   box.querySelectorAll('.paper-card').forEach((card) => card.addEventListener('toggle', async () => {
     if (!card.open || card.dataset.loaded) return;
@@ -471,8 +703,44 @@ function openCity(name, origin) {
     } catch (err) { slot.innerHTML = failed('offices', err); }
   }));
 
+  const placeBlock = async (el, key, what, radius = 20000, sift = (x) => x) => {
+    try {
+      const list = sift(await places([key], radius));
+      const look = `<p><a href="${mapsUrl(`${what} ${search}`)}" target="_blank" rel="noopener">Look for ${esc(what)} on Google Maps</a></p>`;
+      el.innerHTML = named(list).length ? placeList(list) + look : hasNoResults(what) + look;
+      wirePlaces(el, list);
+    } catch (err) { el.innerHTML = failed(what, err); }
+  };
+  const LUXURY = /mercedes|bmw|audi|jaguar|land rover|porsche|lexus|volvo|toyota|mahindra/i;
+
   const loaders = {
-    news: () => newsBlock($('#news'), `${search} Uttar Pradesh when:7d`, { pins: true }),
+    survive: () => weatherBlock($('#now')),
+    news: () => {
+      newsBlock($('#news'), `${search} Uttar Pradesh when:7d`, { pins: true });
+      meterBlock($('#meterParty'), search, 'party');
+      meterBlock($('#meterSamaj'), search, 'samaj');
+    },
+    netas: () => {
+      placeBlock($('#partyOffices'), 'party', 'party offices', 25000);
+      newsBlock($('#netaNews'), `${search} MLA OR MP OR minister when:14d`);
+    },
+    films: () => {
+      listBlock($('#films'), 'films', 'films', (f) => `<li>${wdLink(f)}<span class="meta">${esc(f.year || '')}</span></li>`);
+      newsBlock($('#starNews'), `actor shooting OR visited ${search} when:90d`);
+    },
+    fashion: () => {
+      placeBlock($('#fashion'), 'fashion', 'clothes shops', 12000);
+      redditBlock($('#fashionReddit'), `shopping market clothes thrift ${search}`);
+    },
+    rich: () => {
+      listBlock($('#companies'), 'companies', 'companies', (c) => `<li>${wdLink(c)}<span class="meta">${[c.about, c.year && `since ${c.year}`, c.founder && `founded by ${c.founder}`].filter(Boolean).map(esc).join(', ')}</span></li>`);
+      peopleBlock($('#richPeople'), 'business');
+      newsBlock($('#richNews'), `${search} billionaire OR crorepati OR businessman family company`);
+    },
+    cars: () => {
+      placeBlock($('#showrooms'), 'car', 'car showrooms', 20000, (l) => l.sort((x, y) => LUXURY.test(y.name || '') - LUXURY.test(x.name || '')));
+      newsBlock($('#vipNews'), `${search} VIP number auction car registration`);
+    },
     lawyers: async () => {
       try {
         const list = await places(['lawyer'], 20000);
@@ -480,11 +748,19 @@ function openCity(name, origin) {
         slot.innerHTML = named(list).length ? placeList(list) : hasNoResults('lawyers');
         wirePlaces(slot, list);
       } catch (err) { $('#lawyers').innerHTML = failed('lawyers', err); }
+      tabs($('#lawCats'), LAW_CATS.map((c) => [c.label, c.label]), (id, body) => {
+        const c = LAW_CATS.find((x) => x.label === id);
+        body.innerHTML = `<div class="lookup"><a href="${mapsUrl(`${c.maps} ${search}`)}" target="_blank" rel="noopener">Numbers and reviews on Google Maps</a></div><div class="law-news">Loading…</div>`;
+        newsBlock($('.law-news', body), `${search} ${c.q}`);
+      });
       newsBlock($('#lawNews'), `${search} advocate case against MLA court`);
       redditBlock($('#lawReddit'), `lawyer advocate ${search}`);
       peopleBlock($('#lawPeople'), 'lawyer');
     },
-    projects: () => newsBlock($('#projectNews'), `${search} project crore sanctioned OR completed OR inaugurated`),
+    projects: () => {
+      moneyBlock($('#moneyNews'), search);
+      newsBlock($('#projectNews'), `${search} project crore sanctioned OR completed OR inaugurated`);
+    },
     underrated: async () => {
       const slot = $('#under');
       try {
@@ -493,11 +769,14 @@ function openCity(name, origin) {
         slot.innerHTML = pool.length ? placeList(pool, 10) : hasNoResults('spots of this type');
         wirePlaces(slot, pool);
       } catch (err) { slot.innerHTML = failed('spots', err); }
-      redditBlock($('#underReddit'), `underrated OR hidden OR ${AGE_WORDS[ageBand()]}`, { group: true });
+      tabs($('#underTabs'), underTabs.map((t) => [t.key, t.label]), (key, body) => placeBlock(body, key, UNDER_TABS.find((t) => t.key === key).label.toLowerCase(), 30000));
+      nearbyBlock($('#nearby'));
+      tabs($('#underReddit'), [[`underrated OR hidden OR ${AGE_WORDS[ageBand()]}`, 'Underrated'], ...AREA_CATS.map(([l, q]) => [q, l])], (q, body) => redditBlock(body, q));
     },
-    origins: () => { peopleBlock($('#pActor'), 'actor'); peopleBlock($('#pNeta'), 'neta'); peopleBlock($('#pBusiness'), 'business'); },
+    origins: () => { peopleBlock($('#pActor'), 'actor'); peopleBlock($('#pNeta'), 'neta'); },
     culture: async () => {
       peopleBlock($('#pMusic'), 'music'); peopleBlock($('#pArt'), 'art');
+      listBlock($('#events'), 'events', 'events', (e) => `<li>${e.year ? `${esc(e.year)}: ` : ''}${wdLink(e)}<span class="meta">${esc(e.about)}</span></li>`);
       try {
         const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent((d.city.en || name).replace(/ /g, '_'))}`);
         const j = await r.json();

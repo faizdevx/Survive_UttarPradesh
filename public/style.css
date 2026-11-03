@@ -57,8 +57,8 @@ a { color: inherit; }
 
 .rola { position: absolute; z-index: 500; top: 14px; left: 56px; width: 270px; background: var(--paper); color: #000; padding: 12px 14px; border: 3px solid #000; max-height: calc(100vh - 120px); overflow: auto; }
 .rola h2 { font-size: 2.4rem; }
-.switch { display: grid; grid-template-columns: 1fr 1fr; margin: 8px 0; border: 3px solid #000; }
-.switch button { background: none; border: 0; padding: 5px 4px; font-weight: 800; color: #000; }
+.switch { display: grid; grid-template-columns: repeat(3, auto); margin: 8px 0; border: 3px solid #000; }
+.switch button { background: none; border: 0; padding: 5px 4px; font-weight: 800; font-size: .82rem; white-space: nowrap; color: #000; }
 .switch button[aria-checked='true'] { background: #000; color: var(--yellow); }
 .legend { display: grid; gap: 2px; font-size: .88rem; }
 .legend div { display: flex; align-items: center; gap: 7px; }
@@ -145,6 +145,34 @@ a { color: inherit; }
 .sec-black .action { background: var(--paper); color: #000; }
 .empty { font-weight: 600; }
 
+.today { display: flex; gap: 6px; align-items: center; font-weight: 800; margin-top: 8px; font-size: .9rem; }
+.now { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px 18px; margin: 0 0 12px; }
+.now dt { font-size: .8rem; opacity: .8; }
+.now dd { margin: 0; font-family: var(--display); font-size: 2rem; line-height: 1.05; }
+.now dd small { display: block; font-family: var(--body); font-size: .8rem; font-weight: 600; }
+.help { display: flex; flex-wrap: wrap; gap: 6px; }
+.help a { background: currentColor; padding: 3px 10px; text-decoration: none; }
+.help b { display: block; color: var(--paper); font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
+.help span { display: block; color: var(--paper); font-size: .72rem; }
+.bars { display: grid; gap: 3px; margin: 4px 0 8px; }
+.bars div { display: grid; grid-template-columns: 76px minmax(0, 1fr) 28px; align-items: center; gap: 8px; font-size: .86rem; font-weight: 600; }
+.bars i { display: block; height: 14px; min-width: 2px; background: currentColor; }
+.flow { display: flex; height: 26px; margin: 6px 0 4px; border: 2px solid currentColor; }
+.flow i { display: block; }
+.flow-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .82rem; margin-bottom: 8px; }
+.flow-key i { display: inline-block; width: 12px; height: 12px; margin-right: 5px; border: 1px solid currentColor; }
+.amount { font-family: var(--display); font-size: 1.25rem; font-weight: 400; display: block; }
+.neta-sum { font-weight: 800; }
+.neta-party { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 1px solid currentColor; }
+.lookup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.lookup input { flex: 1 1 180px; min-width: 0; background: #fff; color: #000; border: 3px solid #000; padding: 4px 8px; }
+.lookup a { background: #000; color: #fff; padding: 5px 12px; font-weight: 700; text-decoration: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.cards button { all: unset; cursor: pointer; display: block; }
+.cards button:focus-visible { outline: 3px solid var(--yellow); }
+.cards img, .cards .noimg { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #0003; }
+.cards b { display: block; line-height: 1.15; margin-top: 4px; text-decoration: underline; }
+.cards span { display: block; font-size: .76rem; opacity: .8; line-height: 1.2; }
 .pin { width: 14px; height: 14px; border: 2px solid #000; background: var(--yellow); }
 .pin.news { background: var(--red); border-radius: 50%; }
 .pin.hot { width: 20px; height: 20px; background: var(--red); }
@@ -155,6 +183,7 @@ a { color: inherit; }
   .rola h2 { font-size: 1.6rem; }
   .wall, .rola .note { display: none; }
   .legend { grid-template-columns: 1fr 1fr; font-size: .78rem; }
+  .today { font-size: .8rem; margin-top: 4px; }
   .find { width: 150px; }
   .near img { height: 70px; }
   .sec { grid-template-columns: 1fr; padding: 16px; }
