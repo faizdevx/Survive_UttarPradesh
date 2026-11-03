@@ -1,4 +1,5 @@
 import { initGhoomo } from './ghoomo.js';
+import { initTilt, initGrip } from './feel.js';
 import { seasonNow, loadKohra, headline, cityLine } from './kohra.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
@@ -139,7 +140,7 @@ function renderLegend() {
 }
 
 async function initMap() {
-  const map = L.map('map', { zoomControl: innerWidth > 860, zoomSnap: 0.25, minZoom: 5, maxBounds: [[22, 74], [32, 88]] }).setView([27.0, 80.6], 7);
+  const map = L.map('map', { zoomControl: innerWidth > 860, zoomSnap: 0.25, minZoom: 5, maxBounds: [[8, 60], [40, 100]] }).setView([27.0, 80.6], 7);
   state.map = map;
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagery Esri, Maxar. Places OpenStreetMap, Wikidata', maxZoom: 19 }).addTo(map);
   map.createPane('labels');
@@ -165,7 +166,8 @@ async function initMap() {
   }).addTo(map);
   // Panels cover part of the map, so UP is fitted inside what stays visible
   const phone = innerWidth <= 860;
-  map.fitBounds(state.layer.getBounds(), phone ? { paddingTopLeft: [8, 150], paddingBottomRight: [8, 80] } : { paddingTopLeft: [340, 10] });
+  const panelEdge = $('.rola').getBoundingClientRect();
+  map.fitBounds(state.layer.getBounds(), phone && innerHeight > innerWidth ? { paddingTopLeft: [8, 160], paddingBottomRight: [8, 96] } : { paddingTopLeft: [panelEdge.right + 12, 12], paddingBottomRight: [12, 12] });
 
   map.on('zoomend', () => state.layer.setStyle(style));
   $('#districtPick').insertAdjacentHTML('beforeend', Object.keys(districts).sort().map((n) => `<option>${esc(n)}</option>`).join(''));
@@ -285,12 +287,12 @@ function drawPins(places, cls) {
 // Dossier covers part of the map, so aim at the middle of what is still visible.
 function flyVisible(lat, lng, zoom) {
   const box = $('#dossier');
-  const covered = box.hidden || innerWidth <= 860 ? 0 : box.offsetWidth;
+  const covered = box.hidden || onPhone() ? 0 : box.offsetWidth;
   const point = state.map.project([lat, lng], zoom).add([covered / 2, 0]);
   state.map.flyTo(state.map.unproject(point, zoom), zoom);
 }
 function focusPlace(p) { flyVisible(p.lat, p.lng, 16); }
-const onPhone = () => innerWidth <= 860;
+const onPhone = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
 const peekMap = () => { if (onPhone()) $('#dossier').classList.add('peek'); };
 function syncPeek() {
   const box = $('#dossier');
@@ -307,7 +309,12 @@ function syncPeek() {
 // Fits a shape inside the part of the map that the page does not cover
 function keepMapClear(bounds) {
   const box = $('#dossier');
-  const pad = onPhone() ? { paddingBottomRight: [0, innerHeight * 0.54], paddingTopLeft: [8, 8] } : { paddingBottomRight: [box.hidden ? 20 : box.offsetWidth + 20, 20], paddingTopLeft: [340, 20] };
+  const rect = box.hidden ? null : box.getBoundingClientRect();
+  const panel = $('.rola').getBoundingClientRect();
+  const left = panel.width && panel.height < innerHeight * 0.9 && !onPhone() ? panel.right + 12 : 12;
+  const pad = rect && rect.top > 0
+    ? { paddingTopLeft: [12, 12], paddingBottomRight: [12, innerHeight - rect.top + 12] }
+    : { paddingTopLeft: [left, 16], paddingBottomRight: [rect ? rect.width + 16 : 16, 16] };
   state.map.flyToBounds(bounds, { ...pad, maxZoom: 11, duration: 0.6 });
 }
 // Each page gets its own address, so Back and shared links work
@@ -1186,6 +1193,8 @@ const ghoomo = initGhoomo({
   enterGhoomo: async () => { if (chunav.on) await setChunav(false); state.current = null; state.newsPins?.clearLayers(); state.pins?.clearLayers(); state.layer?.setStyle(style); },
 });
 
+initTilt();
+initGrip({ store });
 intro();
 initMap();
 initChunav();

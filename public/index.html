@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Survive Uttar Pradesh</title>
 <meta name="description" content="A live satellite map of Uttar Pradesh: who holds which seat, who comes from where, and where to get chai.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Mukta:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@600&family=Rozha+One&family=VT323&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="depth.css">
 </head>
 <body>
 
@@ -98,6 +99,7 @@
   </div>
 
   <aside id="dossier" class="dossier" aria-label="Details" tabindex="-1" hidden></aside>
+  <div id="dossierGrip" class="grip" role="separator" tabindex="0" aria-label="Resize this panel. Use the arrow keys, or double click to reset."></div>
   <button id="peekBtn" class="peek-btn" type="button" hidden>Show map</button>
   <section id="samayBar" class="samay-bar" aria-label="Samay slider" hidden></section>
   <div id="radioBar" class="radio-bar" hidden><span>On air: <b id="radioName"></b></span><button id="radioStop" type="button">Stop</button></div>

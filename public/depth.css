@@ -1,0 +1,312 @@
+/* The 3D layer: every control is a physical object off the old TV set.
+   Loaded after style.css. Layout stays there, depth and flexible sizing live here. */
+:root {
+  --ease-press: cubic-bezier(.3, 1.6, .5, 1);
+  --glow: inset 0 2px 0 #ffffff66, inset 0 -2px 0 #00000026;
+  --float: 0 14px 26px #0000008c;
+  --radius: 16px;
+  --dw: min(760px, 62vw);
+  --dw-sheet: min(460px, 36vw);
+
+  --sheet-top: 48dvh;
+}
+html, body { font-size: clamp(15.5px, 12px + .35vw, 18px); }
+.app { --cur: var(--dw); }
+.app:has(.dossier.sheet) { --cur: var(--dw-sheet); }
+
+/* Keys: a face, a side wall under it, and a press that sinks into the side */
+.kohra-btn, .ghoomo-btn, .chunav-btn, .near, .action, .quick-grid button, .tv-dial button, .samay-row button,
+.k-when button, .seat-form button, .close, .close-mini, .peek-btn, .lookup a, .radio-bar button, .soft-go,
+.tags button, .jump button, .tv-chips button, .samay-spots button, .bingo button, .help a, .g-card, .switch button,
+.leaflet-bar a {
+  --depth: 5px;
+  --face: #f7f5ee;
+  --side: #8f8b80;
+  --ink: #000;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--face) 88%, #fff), var(--face) 45%, color-mix(in srgb, var(--face) 90%, #000));
+  color: var(--ink);
+  box-shadow: var(--glow), 0 var(--depth) 0 var(--side), 0 calc(var(--depth) + 5px) 10px #00000059;
+  transition: transform .09s var(--ease-press), box-shadow .09s var(--ease-press), filter .12s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.kohra-btn:active, .ghoomo-btn:active, .chunav-btn:active, .near:active, .action:active, .quick-grid button:active, .tv-dial button:active,
+.samay-row button:active, .k-when button:active, .seat-form button:active, .close:active, .close-mini:active, .lookup a:active,
+.radio-bar button:active, .soft-go:active, .tags button:active, .jump button:active, .tv-chips button:active, .samay-spots button:active,
+.bingo button:active, .help a:active, .leaflet-bar a:active {
+  transform: translateY(calc(var(--depth) - 1px));
+  box-shadow: var(--glow), 0 1px 0 var(--side), 0 2px 4px #00000059;
+}
+@media (hover: hover) {
+  .kohra-btn:hover, .ghoomo-btn:hover, .chunav-btn:hover, .near:hover, .action:hover, .quick-grid button:hover, .tv-dial button:hover,
+  .samay-row button:hover, .k-when button:hover, .tags button:hover, .jump button:hover, .tv-chips button:hover, .samay-spots button:hover,
+  .bingo button:hover, .help a:hover { filter: brightness(1.07); }
+}
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; border-radius: 6px; }
+.rola :focus-visible, .g-body :focus-visible { outline-color: var(--red); }
+
+.kohra-btn { --face: #ffffff; --side: #8f8b80; }
+.ghoomo-btn { --face: var(--yellow); --side: #937500; }
+.chunav-btn { --face: var(--red); --side: #7d1010; --ink: #fff; }
+.chunav-btn[aria-pressed='true'] { --face: #222; --side: #000; --ink: var(--yellow); }
+.near { --face: var(--green); --side: #0f4a21; --ink: #fff; overflow: hidden; }
+.near img { border-radius: 11px 11px 0 0; }
+.action, .quick-grid button, .tv-dial button, .samay-row button, .k-when button, .seat-form button, .lookup a, .soft-go { --face: #2b2926; --side: #000; --ink: var(--yellow); padding: .5em 1em; font-weight: 800; }
+.sec-black .action { --face: var(--paper); --side: #8f8b80; --ink: #000; }
+.action.ghost { --face: #f7f5ee; --side: #8f8b80; --ink: #000; border: 0; }
+.quick-grid button.active { --face: var(--red); --side: #7d1010; --ink: #fff; background: linear-gradient(180deg, #e8403f, var(--red)); color: #fff; }
+.close, .close-mini, .peek-btn, .radio-bar button { --face: var(--yellow); --side: #937500; }
+.close { border-radius: 12px; }
+.peek-btn { --depth: 6px; border-radius: 999px; padding: .65em 1.4em; }
+.peek-btn:active { transform: translate(-50%, 5px); box-shadow: var(--glow), 0 1px 0 var(--side); }
+.help a { --face: #2b2926; --side: #000; padding: 6px 12px; }
+
+/* Small keys read as keycaps, chosen ones sink in */
+.tags button, .tv-chips button, .samay-spots button, .jump button { --depth: 3px; padding: .35em .85em; font-weight: 700; }
+.tags { gap: 8px; }
+.tv-chips, .samay-spots { gap: 8px; }
+.dossier .tags button[aria-pressed='true'], .tv-chips button[aria-pressed='true'], .samay-spots button[aria-pressed='true'] {
+  --face: #2b2926; --side: #000; --ink: #fff;
+  background: #2b2926; color: #fff;
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 5px #000, 0 1px 0 #000;
+}
+.bingo { gap: 9px; }
+.bingo button { --depth: 4px; padding: 7px 4px; }
+.bingo button[aria-pressed='true'] { --face: var(--green); --side: #0f4a21; --ink: #fff; background: linear-gradient(180deg, #2a9a4b, var(--green)); color: #fff; transform: translateY(3px); box-shadow: inset 0 2px 4px #0006, 0 1px 0 var(--side); }
+
+/* Segmented switch sits in a well, the chosen side rises out of it */
+.switch { border: 0; border-radius: 13px; padding: 4px; gap: 4px; background: #c9c5b8; box-shadow: inset 0 2px 5px #0000006b, 0 1px 0 #fff; }
+.switch button { --depth: 0px; background: none; box-shadow: none; padding: .45em .3em; border-radius: 9px; }
+.switch button[aria-checked='true'] { --depth: 3px; --face: #2b2926; --side: #000; --ink: var(--yellow); background: #2b2926; color: var(--yellow); box-shadow: var(--glow), 0 3px 0 #000; transform: translateY(-2px); }
+
+/* Wells: anything you type into or pick from is sunk into the surface */
+input:not([type='range']):not([type='checkbox']), select, .seat-form input, .lookup input, .plate input, .g-select, #seatPick, .find select {
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: #000;
+  padding: .5em .7em;
+  box-shadow: inset 0 3px 6px #00000052, inset 0 0 0 2px #0000002e, 0 1px 0 #ffffffb3;
+}
+.seat-form div { gap: 6px; }
+#tvAge input { background: #ffc53a; color: #2b1200; }
+
+/* Sliders: a machined track and a knob you could grab */
+input[type='range'] { -webkit-appearance: none; appearance: none; background: none; height: 34px; }
+input[type='range']::-webkit-slider-runnable-track { height: 11px; border-radius: 99px; background: linear-gradient(180deg, #8f8b80, #c9c5b8); box-shadow: inset 0 2px 4px #0000008c, 0 1px 0 #fff; }
+input[type='range']::-moz-range-track { height: 11px; border-radius: 99px; background: #b5b1a4; box-shadow: inset 0 2px 4px #0000008c, 0 1px 0 #fff; }
+input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #ff9a97, var(--red) 55%, #8e1212); box-shadow: 0 4px 0 #6c0f0f, 0 7px 9px #0000006b; cursor: grab; }
+input[type='range']::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #ff9a97, var(--red) 55%, #8e1212); box-shadow: 0 4px 0 #6c0f0f, 0 7px 9px #0000006b; cursor: grab; }
+input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
+
+/* Floating consoles over the map */
+.rola, .samay-bar, .radio-bar {
+  border: 0;
+  border-radius: 20px;
+  box-shadow: inset 0 2px 0 #fff, inset 0 -2px 0 #0000001f, 0 8px 0 #8f8b80, var(--float);
+}
+.rola { width: clamp(250px, 22vw, 320px); max-height: calc(100vh - 262px); background: linear-gradient(170deg, #fbfaf5, var(--paper) 60%, #dedbd0); padding: 14px; scrollbar-width: thin; }
+.app:has(.find[hidden]) .rola { max-height: calc(100vh - 36px); }
+.samay-bar { background: linear-gradient(170deg, #fbfaf5, var(--paper) 60%, #dedbd0); padding: 14px 16px 16px; }
+.radio-bar { background: linear-gradient(180deg, #33302c, #161412); box-shadow: inset 0 1px 0 #ffffff40, 0 5px 0 #000, var(--float); border-radius: 14px; }
+.top-btns { gap: 12px; margin-bottom: 14px; padding-bottom: 5px; }
+.find { width: clamp(170px, 15vw, 210px); }
+.near { display: block; }
+.legend i, .k-legend i, .k-row i, .flow-key i, .neta-party { border-radius: 4px; box-shadow: inset 0 1px 0 #ffffff80, 0 1px 2px #0006; border: 0; }
+.tally, .bingo-bar, .flow { border: 0; border-radius: 9px; overflow: hidden; box-shadow: inset 0 2px 4px #00000073, 0 1px 0 #ffffffa6; background: #c9c5b8; }
+.tally { overflow: visible; }
+.tally i:first-child { border-radius: 9px 0 0 9px; }
+.tally i:last-child { border-radius: 0 9px 9px 0; }
+.bingo-bar i { border-radius: 9px; background: linear-gradient(180deg, #e8403f, #b31717); }
+.bars i { border-radius: 4px; box-shadow: inset 0 1px 0 #ffffff4d; }
+.fight-bar { border-radius: 7px; box-shadow: inset 0 2px 0 #ffffff4d, 0 3px 0 #0000004d; }
+
+/* Map furniture */
+.leaflet-bar { border: 0 !important; box-shadow: none !important; display: grid; gap: 9px; }
+.leaflet-bar a { --depth: 4px; width: 36px !important; height: 36px !important; line-height: 36px !important; border-radius: 10px !important; border: 0 !important; color: #000 !important; }
+.leaflet-tooltip.dist-tip { border-radius: 10px; padding: 7px 11px; background: linear-gradient(180deg, #2b2926, #0d0c0b); box-shadow: inset 0 1px 0 #ffffff33, 0 4px 0 #000, 0 9px 14px #0000008c; }
+.leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: inset 0 2px 0 #fff, 0 5px 0 #8f8b80, 0 12px 20px #0000008c; }
+.leaflet-popup-tip { box-shadow: none; }
+.pin {
+  border: 0; border-radius: 50%;
+  background-color: var(--yellow);
+  background-image: radial-gradient(circle at 34% 28%, #ffffffd9 0 12%, transparent 45%), radial-gradient(circle at 60% 75%, #00000059, transparent 65%);
+  box-shadow: 0 3px 0 #0000009e, 0 6px 7px #000000a6;
+}
+.pin.news { background-color: var(--red); }
+.pin.nose { background-color: var(--green); }
+.pin.hot { background-color: var(--red); }
+
+/* The dossier is a stack of cards lying on the TV cabinet */
+.dossier { background: radial-gradient(120% 60% at 50% 0, #3a342b, #1a1612 70%); overflow-x: hidden; container-type: inline-size; box-shadow: -14px 0 30px #00000080; scrollbar-color: #5a5247 transparent; }
+.close { margin: 12px 14px 0 0; }
+.masthead, .quick, .sec, .g-head, .g-body {
+  --side: #8f8b80;
+  margin: 14px;
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: inset 0 2px 0 #ffffff59, inset 0 -2px 0 #00000026, 0 8px 0 var(--side), var(--float);
+}
+.masthead { --side: #7d1010; background: linear-gradient(165deg, #e8403f, var(--red) 45%, #b31717); }
+.quick { --side: #937500; margin-top: 22px; background: linear-gradient(170deg, #ffd92e, var(--yellow) 55%, #dcaf00); }
+.sec { margin-top: 22px; }
+.sec-paper { --side: #8f8b80; background: linear-gradient(170deg, #fbfaf5, var(--paper) 60%, #dedbd0); }
+.sec-black { --side: #000; background: linear-gradient(170deg, #302d29, #1c1a18); }
+.sec-red { --side: #7d1010; background: linear-gradient(170deg, #e8403f, var(--red) 55%, #b31717); }
+.sec-amber { --side: #a75c05; background: linear-gradient(170deg, #ffa332, var(--amber) 55%, #d97b08); }
+.sec-green { --side: #0f4a21; background: linear-gradient(170deg, #2a9a4b, var(--green) 55%, #17672e); }
+.g-head { --side: #937500; background: linear-gradient(170deg, #ffd92e, var(--yellow) 55%, #dcaf00); }
+.g-body { margin-top: 22px; background: linear-gradient(170deg, #fbfaf5, var(--paper) 60%, #dedbd0); min-height: 0; padding-bottom: 18px; }
+.pick { border-radius: 12px; box-shadow: inset 0 2px 7px #000; background: #1c1a18; }
+.k-card, .zone-card { border-radius: 12px; border: 0; box-shadow: inset 0 2px 0 #fff, 0 5px 0 #8f8b80, 0 9px 13px #00000042; }
+.zone-card { border-top: 7px solid #000; }
+.mini-tv { box-shadow: inset 0 0 60px #5a2200, 0 0 0 10px #2a241d, 0 10px 0 10px #120f0b, 0 18px 26px 10px #0000006b; margin: 26px 34px 28px; }
+.list li { border-bottom-color: color-mix(in srgb, currentColor 28%, transparent); }
+.k-row, .project, .paper-card { border-bottom-color: color-mix(in srgb, currentColor 28%, transparent); }
+
+/* Sticky jump row is a tray the keys sit in */
+.jump { top: 0; margin: 14px 0 0; padding: 9px 66px 12px 14px; gap: 8px; background: linear-gradient(180deg, #1a1612f7 80%, #1a161200); }
+.jump button { --face: #3a352e; --side: #000; --ink: var(--paper); }
+.sec, .quick { scroll-margin-top: 62px; }
+
+/* Posters lean back and stand off the card, with room for the tilt */
+.sec > img {
+  border-radius: 10px;
+  transform: perspective(700px) rotateY(calc(var(--lean, -9deg) + var(--ry, 0deg))) rotateX(calc(2deg + var(--rx, 0deg)));
+  box-shadow: 3px 3px 0 #ffffff33, 9px 11px 0 #0000004d, 16px 22px 24px #00000066;
+  transition: transform .18s ease-out;
+}
+.sec:nth-of-type(even) > img { --lean: 9deg; }
+.people img, .people .noimg, .cards img, .cards .noimg { border-radius: 10px; box-shadow: 0 4px 0 #00000059, 0 8px 12px #00000059; }
+.people a, .cards button { transform: perspective(600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .16s ease-out; }
+.people b, .cards b { margin-top: 10px; }
+
+/* Ghoomo tiles rock with the pointer and the title floats above the face */
+.g-grid { gap: 18px 14px; padding-bottom: 20px; }
+.g-card { --depth: 7px; border-radius: 15px; transform-style: preserve-3d; transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .14s ease-out, box-shadow .09s; }
+.g-card b { transform: translateZ(26px); }
+.g-card span { transform: translateZ(14px); }
+.g-card:active { transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(6px); box-shadow: var(--glow), 0 1px 0 var(--side); }
+.g-red { --face: var(--red); --side: #7d1010; --ink: #fff; }
+.g-amber { --face: var(--amber); --side: #a75c05; --ink: #000; }
+.g-green { --face: var(--green); --side: #0f4a21; --ink: #fff; }
+.g-paper { --face: #fff; --side: #8f8b80; --ink: #000; }
+.g-black { --face: #2b2926; --side: #000; --ink: var(--paper); }
+.g-yellow { --face: var(--yellow); --side: #937500; --ink: #000; }
+
+/* Extruded type */
+.city-en { text-shadow: .012em .012em 0 #a81616, .024em .024em 0 #961313, .036em .036em 0 #841010, .048em .048em 0 #720d0d, .06em .06em 0 #600b0b, .09em .1em .08em #00000066; }
+.sec h2 { text-shadow: .03em .03em 0 #00000040, .06em .06em 0 #00000026; }
+.g-head h1 { text-shadow: .02em .02em 0 #c29b00, .04em .04em 0 #a88600, .06em .06em 0 #8e7100; }
+.big-margin, .samay-top b, .bingo-score b { text-shadow: .03em .03em 0 #00000040, .06em .06em 0 #00000026; }
+.tv-page h1 { text-shadow: .012em .012em 0 #e39a1c, .024em .024em 0 #cf8214, .036em .036em 0 #ba6c0d, .05em .05em 0 #8f4d07, .09em .1em .06em #0000004d; }
+
+/* The TV is a real cabinet: it leans with the pointer, the screen is set in, the power button is domed */
+.tv { perspective: 1400px; background: radial-gradient(90% 70% at 50% 40%, #3a342b, #120f0b); }
+.tv-set {
+  border: 0;
+  background: linear-gradient(160deg, #4a4034, #2a241d 50%, #1a1612);
+  transform: rotateX(calc(3deg + var(--rx, 0deg))) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform .2s ease-out;
+  box-shadow: inset 0 2px 0 #ffffff33, inset 0 -3px 0 #00000080, 0 14px 0 #120f0b, 0 40px 70px #000;
+}
+.tv-screen { box-shadow: inset 0 0 90px #5a2200, inset 0 6px 18px #2b1200, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044; }
+.tv-screen::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(70% 45% at 28% 12%, #ffffff33, transparent 70%); }
+.tv-advisory { border-radius: 6px; box-shadow: 0 5px 0 #000, 0 11px 14px #00000080; transform: rotate(-3deg) translateZ(20px); }
+.power { --depth: 8px; border: 0; background: radial-gradient(circle at 36% 28%, #ff8583, var(--red) 52%, #7d1010); box-shadow: inset 0 3px 3px #ffffff4d, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 var(--depth) 0 8px #120f0b, 0 18px 18px 6px #000000a6; transition: transform .1s var(--ease-press), box-shadow .1s; }
+.power:active { transform: translateY(5px); box-shadow: inset 0 3px 3px #ffffff33, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 3px 0 8px #120f0b; }
+
+/* Grip: drag to resize. A side bar on wide screens, a handle on phone sheets */
+.grip { position: absolute; z-index: 610; display: none; touch-action: none; }
+.dossier:not([hidden]) ~ .grip { display: block; }
+.grip::after { content: ''; position: absolute; border-radius: 99px; background: linear-gradient(90deg, #f7f5ee, #8f8b80); box-shadow: 0 2px 5px #0000008c; }
+.grip:focus-visible { outline-offset: -3px; }
+
+/* Layout answers to the panel's own width, so resizing it reflows the content */
+@container (max-width: 560px) {
+  .sec { grid-template-columns: 1fr; }
+  .sec > img { max-width: 150px; }
+  .city-en { font-size: 18cqi; }
+}
+@container (min-width: 561px) {
+  .city-en { font-size: clamp(64px, 15cqi, 138px); }
+}
+
+/* Roomy screens */
+@media (min-width: 861px) {
+  .dossier { width: var(--dw); }
+  .dossier.sheet { width: var(--dw-sheet); }
+  .grip { top: 0; bottom: 0; right: calc(var(--cur) - 9px); width: 18px; cursor: ew-resize; }
+  .grip::after { top: 50%; left: 5px; width: 8px; height: 70px; transform: translateY(-50%); }
+}
+
+/* Tablets get a little more map */
+@media (min-width: 861px) and (max-width: 1180px) {
+  :root { --dw: 56vw; --dw-sheet: 42vw; }
+  .rola { width: 240px; left: 54px; }
+}
+
+/* Phones held upright */
+@media (max-width: 860px) and (orientation: portrait) {
+  .dossier { box-shadow: 0 -14px 30px #00000080; }
+  .dossier.sheet { top: var(--sheet-top); border-top: 0; border-radius: 22px 22px 0 0; padding-top: 16px; }
+  .app:has(.dossier.sheet:not([hidden])) .grip { display: block; left: 0; right: 0; top: var(--sheet-top); height: 34px; cursor: ns-resize; }
+  .grip { display: none !important; }
+  .app:has(.dossier.sheet:not([hidden])) .grip { display: block !important; }
+  .grip::after { left: 50%; top: 8px; width: 64px; height: 8px; transform: translateX(-50%); background: linear-gradient(180deg, #f7f5ee, #8f8b80); }
+  .masthead, .quick, .sec, .g-head, .g-body { margin-left: 10px; margin-right: 10px; }
+  .sec > img { transform: perspective(700px) rotateY(var(--lean, -6deg)) rotateX(2deg); }
+  .sec:nth-of-type(even) > img { --lean: 6deg; }
+  .rola, .app:has(.find[hidden]) .rola { left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); width: auto; padding: 8px 10px 10px; border-radius: 16px; }
+  .find { left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(26px, env(safe-area-inset-bottom)); width: auto; align-items: stretch; }
+  .near { display: flex; }
+  .near img { border-radius: 11px 0 0 11px; }
+  .top-btns { gap: 10px; margin-bottom: 8px; }
+}
+
+/* Phones on their side: the page moves beside the map, and the panel folds small */
+@media (max-width: 860px) and (orientation: landscape) {
+  .dossier, .dossier.sheet { top: 0; width: var(--dw-land, 58vw); border-top: 0; }
+  .dossier.peek { transform: none; visibility: visible; }
+  .grip { top: 0; bottom: 0; right: calc(var(--dw-land, 58vw) - 9px); width: 18px; cursor: ew-resize; }
+  .grip::after { top: 50%; left: 5px; width: 8px; height: 56px; transform: translateY(-50%); }
+  .rola, .app:has(.find[hidden]) .rola { left: 8px; right: auto; top: 8px; width: 210px; padding: 8px; max-height: calc(100dvh - 16px); }
+  .top-btns { grid-template-columns: 1fr; }
+  .kohra-btn { grid-column: auto; }
+  .chunav-btn span, .ghoomo-btn span { display: none; }
+  .find { left: auto; right: 8px; bottom: 22px; width: 240px; }
+  .app:has(.dossier:not([hidden])) .find, .app:has(.dossier:not([hidden])) .rola { display: none; }
+}
+
+/* Fingers need room */
+@media (pointer: coarse) {
+  .tags button, .tv-chips button, .samay-spots button, .jump button, .k-when button, .close-mini, .radio-bar button, .action, .quick-grid button, .seat-form button, .tv-dial button { min-height: 44px; }
+  .bingo button { min-height: 52px; }
+  .switch button { min-height: 40px; }
+  .list button.link, .k-row button, .link-btn, .close-seats button { padding-block: 6px; display: inline-block; }
+}
+.bingo span, .ghoomo-btn span, .chunav-btn span, .kohra-btn span { font-size: max(.72rem, 12px); }
+.people span, .cards span, .help span, .k-axis { font-size: max(.74rem, 12px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  .tv-set, .g-card, .people a, .cards button { transform: none; }
+  .sec > img { transform: none; }
+}
+
+/* Short screens: the TV fits by height, so the power button always stays reachable */
+@media (max-height: 620px) {
+  .tv { padding: 10px; overflow: auto; }
+  .tv-set { width: min(100%, 150dvh); grid-template-columns: 1fr clamp(92px, 16vw, 130px); padding: 12px; box-shadow: inset 0 2px 0 #ffffff33, 0 8px 0 #120f0b; transform: none; }
+  .tv-screen { aspect-ratio: auto; height: calc(100dvh - 58px); padding: 8px 18px; font-size: clamp(14px, 4.4dvh, 22px); }
+  .tv-page h1 { font-size: clamp(30px, 17dvh, 84px); }
+  .tv-hi { margin-top: .4rem; font-size: clamp(12px, 4dvh, 18px); }
+  #tvAge label { font-size: clamp(24px, 9dvh, 48px); }
+  #tvAge input { font-size: clamp(26px, 10dvh, 48px); margin: .1rem 0; }
+  .tv-controls { flex-direction: column; }
+  .power { width: clamp(68px, 22dvh, 100px); font-size: .9rem; }
+}
