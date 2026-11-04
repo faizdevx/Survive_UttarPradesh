@@ -90,7 +90,10 @@ async function cached(key, fn, ttl = TTL) {
   if (hit && Date.now() - hit.at < ttl) return hit.value;
   try {
     const value = await fn();
+    cache.delete(key);
     cache.set(key, { at: Date.now(), value });
+    // Oldest entries go first, so a stream of odd queries cannot fill the memory
+    while (cache.size > 400) cache.delete(cache.keys().next().value);
     return value;
   } catch (err) {
     // An old answer beats none when a source has a bad minute
@@ -411,6 +414,8 @@ async function wayback() {
 // Esri's own record of when each photo was really taken at this spot
 async function samayhere(params) {
   const [la, lo] = coords(params);
+  // Each lookup makes dozens of calls to Esri, so it only answers for UP and nearby
+  if (la < 23 || la > 31.5 || lo < 76 || lo > 85.5) throw new Error('photo dates are only available around Uttar Pradesh');
   const stops = await cached('wayback:list', wayback, 24 * 3600000);
   const ask = async (s) => {
     for (const layer of [6, 7, 5]) {
@@ -532,13 +537,43 @@ const TTLS = { kohraobs: 20 * 60 * 1000, samayhere: 6 * 60 * 60 * 1000, radio: 3
 
 const API = { kohraobs, samayhere, tenders: fetchTenders, mplads, kohra, reddit, news, osm, people, events, films, companies, nearby, weather, meter, money, geonews, locality, geocode, candidates, wayback, radio };
 
+// Each visitor gets a fair share of the calls this server makes to free public services
+const HITS = new Map();
+const LIMIT_PER_MINUTE = 150;
+function overLimit(req) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hit = HITS.get(ip);
+  if (!hit || now - hit.since > 60000) {
+    HITS.delete(ip);
+    HITS.set(ip, { since: now, n: 1 });
+    if (HITS.size > 5000) HITS.delete(HITS.keys().next().value);
+    return false;
+  }
+  hit.n += 1;
+  return hit.n > LIMIT_PER_MINUTE;
+}
+
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://x');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  let url;
+  let rel;
+  // A malformed address must not be able to bring the site down
+  try {
+    url = new URL(req.url, 'http://x');
+    rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
+  } catch {
+    res.writeHead(400);
+    return res.end('Bad request');
+  }
   const route = url.pathname.match(/^\/api\/(\w+)$/);
   if (route) {
-    const fn = API[route[1]];
+    const fn = Object.hasOwn(API, route[1]) ? API[route[1]] : null;
     res.setHeader('Content-Type', 'application/json');
     if (!fn) { res.writeHead(404); return res.end('{"error":"no such route"}'); }
+    if (url.search.length > 600) { res.writeHead(414); return res.end('{"error":"request too long"}'); }
+    if (overLimit(req)) { res.writeHead(429, { 'Retry-After': '60' }); return res.end('{"error":"too many requests, try again in a minute"}'); }
     try {
       const params = Object.fromEntries(url.searchParams);
       const value = await cached(`${route[1]}:${url.search}`, () => fn(params), TTLS[route[1]]);
@@ -548,9 +583,8 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ error: err.message }));
     }
   }
-  const rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
   const file = path.join(ROOT, rel);
-  if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     const ext = path.extname(file);
@@ -567,4 +601,6 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+// One failed background job should never take the site down
+process.on('unhandledRejection', (err) => console.error('Unhandled:', err));
 server.listen(PORT, () => console.log(`Survive Uttar Pradesh on http://localhost:${PORT}`));
