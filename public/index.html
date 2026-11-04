@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Survive Uttar Pradesh</title>
+<meta name="description" content="A live satellite map of Uttar Pradesh: who holds which seat, who comes from where, and where to get chai.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Mukta:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@600&family=Rozha+One&family=VT323&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="depth.css">
+</head>
+<body>
+
+<div id="tv" class="tv" role="dialog" aria-label="Survive Uttar Pradesh intro">
+  <div class="tv-set">
+    <div class="tv-screen" id="tvScreen">
+      <canvas id="static" aria-hidden="true"></canvas>
+      <div class="phone-bar"><span>▂▄▆ ✉</span><span id="clock">--:--</span><span>▮▮▮</span></div>
+
+      <div class="tv-page" id="tvTitle">
+        <h1>Survive<br>Uttar<br>Pradesh!!</h1>
+        <p class="tv-hi">उत्तर प्रदेश में ज़िंदा कैसे रहें</p>
+      </div>
+
+      <form class="tv-page" id="tvAge" hidden>
+        <label for="ageInput">Umar kitni hai?</label>
+        <input id="ageInput" type="number" min="5" max="110" inputmode="numeric" placeholder="20" required>
+        <p>Your age picks the underrated spots you see. It stays in this browser.</p>
+        <button class="soft-go" type="submit">Open the map</button>
+      </form>
+
+      <div class="phone-keys"><span>Menu</span><span>ArabianTune</span><span>Back</span></div>
+    </div>
+    <div class="tv-controls">
+      <img src="img/4.jpg" alt="Parental advisory poster: I say fuck a lot" class="tv-advisory">
+      <button id="powerBtn" class="power">Turn on</button>
+    </div>
+  </div>
+</div>
+
+<main id="app" class="app">
+  <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
+
+  <section class="rola" id="rola">
+    <div class="top-btns">
+      <button id="kohraBtn" class="kohra-btn" type="button"><b id="kohraName">Kohra meter</b><span id="kohraLine">Checking the next 48 hours…</span></button>
+      <button id="hisaabBtn" class="hisaab-btn" type="button"><b>Mera Hisaab</b><span>Where UP's money goes, with proof</span></button>
+      <button id="ghoomoBtn" class="ghoomo-btn" type="button"><b>Ghoomo UP</b><span>Niche stuff, 10 ways</span></button>
+      <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
+    </div>
+    <div id="chunavPanel" class="chunav-panel" hidden>
+      <form id="seatForm" class="seat-form">
+        <label for="seatQ">Your area, find your seat</label>
+        <div><input id="seatQ" autocomplete="off" placeholder="Hazratganj, Lucknow"><button type="submit">Find</button></div>
+      </form>
+      <button id="seatGps" class="link-btn" type="button">Use my location</button>
+      <select id="seatPick" aria-label="Choose a seat"><option value="">Or pick a seat</option></select>
+      <div id="seatHits" role="status"></div>
+      <div class="switch two" role="radiogroup" aria-label="Seat colours">
+        <button role="radio" aria-checked="true" data-view="party">Who won 2022</button>
+        <button role="radio" aria-checked="false" data-view="close">How close</button>
+      </div>
+      <div id="seatLegend" class="legend"></div>
+      <div id="seatTally" class="tally"></div>
+      <details class="wall"><summary>10 closest seats of 2022</summary><ol id="closeSeats" class="close-seats"></ol></details>
+      <p class="note">Boundaries are approximate. Confirm your seat on the Election Commission's voter search.</p>
+    </div>
+    <div id="rolaPanel">
+    <h2><button id="rolaToggle" class="rola-toggle" type="button" aria-expanded="true" aria-controls="rolaBody">Rola kiska?</button></h2>
+    <div id="rolaBody">
+    <div class="switch" role="radiogroup" aria-label="Map layer">
+      <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
+      <button role="radio" aria-checked="false" data-mode="mla">Vidhan Sabha</button>
+      <button role="radio" aria-checked="false" data-mode="samaj">Samaj</button>
+    </div>
+    <div id="legend" class="legend"></div>
+    <p id="legendNote" class="note"></p>
+    <label class="today"><input type="checkbox" id="todayNews" checked> Today's UP news on the map</label>
+    <p id="todayMsg" class="note" role="status"></p>
+    <details class="wall">
+      <summary>Poster wall</summary>
+      <div class="wall-grid">
+        <img src="img/12.jpg" alt="Film-style poster with a burning car">
+        <img src="img/6.jpg" alt="Poster portrait of a politician">
+        <img src="img/7.jpg" alt="Poster portrait with folded hands">
+        <img src="img/8.jpg" alt="Press photo of a politician speaking">
+        <img src="img/9.jpg" alt="Press photo of a politician in a red cap">
+      </div>
+    </details>
+    </div>
+    </div>
+  </section>
+
+  <div class="find">
+    <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span>Near me</span></button>
+    <select id="districtPick" aria-label="Choose a district"><option value="">Pick a district</option></select>
+    <p id="findMsg" class="note" role="status"></p>
+  </div>
+
+  <aside id="dossier" class="dossier" aria-label="Details" tabindex="-1" hidden></aside>
+  <div id="dossierGrip" class="grip" role="separator" tabindex="0" aria-label="Resize this panel. Use the arrow keys, or double click to reset."></div>
+  <button id="peekBtn" class="peek-btn" type="button" hidden>Show map</button>
+  <section id="samayBar" class="samay-bar" aria-label="Samay slider" hidden></section>
+  <div id="radioBar" class="radio-bar" hidden><span>On air: <b id="radioName"></b></span><button id="radioStop" type="button">Stop</button></div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

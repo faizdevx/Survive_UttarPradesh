@@ -1,0 +1,1791 @@
+{
+ "Amroha": {
+  "name": "Amroha",
+  "seats": [
+   {
+    "seat": "Amroha",
+    "party": "BJP",
+    "mp": "Kanwar Singh Tanwar"
+   }
+  ],
+  "census": null,
+  "qid": "Q1891677",
+  "city": {
+   "en": "Amroha",
+   "hi": "अमरोहा",
+   "ur": "امروہہ"
+  },
+  "lat": 28.9044,
+  "lng": 78.4675
+ },
+ "Hapur": {
+  "name": "Hapur",
+  "seats": [
+   {
+    "seat": "Meerut",
+    "party": "BJP",
+    "mp": "Arun Govil"
+   },
+   {
+    "seat": "Amroha",
+    "party": "BJP",
+    "mp": "Kanwar Singh Tanwar"
+   }
+  ],
+  "census": null,
+  "qid": "Q5653340",
+  "city": {
+   "en": "Hapur",
+   "hi": "हापुड़",
+   "ur": "ہاپوڑ"
+  },
+  "lat": 28.7299677,
+  "lng": 77.775499
+ },
+ "Bareilly": {
+  "name": "Bareilly",
+  "seats": [
+   {
+    "seat": "Bareilly",
+    "party": "BJP",
+    "mp": "Chhatrapal Gangwar"
+   },
+   {
+    "seat": "Aonla",
+    "party": "SP",
+    "mp": "Neeraj Maurya"
+   }
+  ],
+  "census": {
+   "pop": 4448359,
+   "muslim": 1536534,
+   "share": 34.5
+  },
+  "qid": "Q1797378",
+  "city": {
+   "en": "Bareilly",
+   "hi": "बरेली",
+   "ur": "بریلی"
+  },
+  "lat": 28.364,
+  "lng": 79.415
+ },
+ "Pilibhit": {
+  "name": "Pilibhit",
+  "seats": [
+   {
+    "seat": "Pilibhit",
+    "party": "BJP",
+    "mp": "Jitin Prasada"
+   }
+  ],
+  "census": {
+   "pop": 2031007,
+   "muslim": 489686,
+   "share": 24.1
+  },
+  "qid": "Q2980705",
+  "city": {
+   "en": "Pilibhit",
+   "hi": "पीलीभीत",
+   "ur": "پیلی بھیت"
+  },
+  "lat": 28.633333333,
+  "lng": 79.766666666
+ },
+ "Bulandshahr": {
+  "name": "Bulandshahr",
+  "seats": [
+   {
+    "seat": "Bulandshahr",
+    "party": "BJP",
+    "mp": "Bhola Singh"
+   }
+  ],
+  "census": {
+   "pop": 3499171,
+   "muslim": 777407,
+   "share": 22.2
+  },
+  "qid": "Q1752328",
+  "city": {
+   "en": "Bulandshahr",
+   "hi": "बुलन्दशहर",
+   "ur": "بلند شہر"
+  },
+  "lat": 28.406944444,
+  "lng": 77.849722222
+ },
+ "Gautam Buddha Nagar": {
+  "name": "Gautam Buddha Nagar",
+  "seats": [
+   {
+    "seat": "G. B. Nagar",
+    "party": "BJP",
+    "mp": "Mahesh Sharma"
+   }
+  ],
+  "census": {
+   "pop": 1648115,
+   "muslim": 215500,
+   "share": 13.1
+  },
+  "qid": "Q1785950",
+  "city": {
+   "en": "Noida",
+   "hi": "नोएडा",
+   "ur": "نوئیڈا"
+  },
+  "lat": 28.57,
+  "lng": 77.32
+ },
+ "Lakhimpur Kheri": {
+  "name": "Lakhimpur Kheri",
+  "seats": [
+   {
+    "seat": "Kheri",
+    "party": "SP",
+    "mp": "Utkarsh Verma"
+   },
+   {
+    "seat": "Dhaurahra",
+    "party": "SP",
+    "mp": "Anand Bhadauriya"
+   }
+  ],
+  "census": {
+   "pop": 4021243,
+   "muslim": 807600,
+   "share": 20.1
+  },
+  "qid": "Q1755447",
+  "city": {
+   "en": "Lakhimpur, Uttar Pradesh",
+   "hi": "लखीमपुर-खीरी",
+   "ur": "لکھیم پور، اترپردیش"
+  },
+  "lat": 27.95,
+  "lng": 80.77
+ },
+ "Budaun": {
+  "name": "Budaun",
+  "seats": [
+   {
+    "seat": "Badaun",
+    "party": "SP",
+    "mp": "Aditya Yadav"
+   },
+   {
+    "seat": "Aonla",
+    "party": "SP",
+    "mp": "Neeraj Maurya"
+   }
+  ],
+  "census": {
+   "pop": 3681896,
+   "muslim": 790515,
+   "share": 21.5
+  },
+  "qid": "Q1815262",
+  "city": {
+   "en": "Budaun",
+   "hi": "बदायूँ",
+   "ur": "بدایوں"
+  },
+  "lat": 28.05,
+  "lng": 79.12
+ },
+ "Bahraich": {
+  "name": "Bahraich",
+  "seats": [
+   {
+    "seat": "Bahraich",
+    "party": "BJP",
+    "mp": "Anand Kumar Gond"
+   }
+  ],
+  "census": {
+   "pop": 3487731,
+   "muslim": 1169436,
+   "share": 33.5
+  },
+  "qid": "Q1812548",
+  "city": {
+   "en": "Bahraich",
+   "hi": "बहराइच",
+   "ur": "بہرائچ"
+  },
+  "lat": 27.574166666,
+  "lng": 81.595833333
+ },
+ "Shahjahanpur": {
+  "name": "Shahjahanpur",
+  "seats": [
+   {
+    "seat": "Shahjahanpur",
+    "party": "BJP",
+    "mp": "Arun Kumar Sagar"
+   }
+  ],
+  "census": {
+   "pop": 3006538,
+   "muslim": 527581,
+   "share": 17.5
+  },
+  "qid": "Q1812557",
+  "city": {
+   "en": "Shahjahanpur",
+   "hi": "शाहजहाँपुर",
+   "ur": "شاہجہاں پور"
+  },
+  "lat": 27.8775,
+  "lng": 79.908611111
+ },
+ "Aligarh": {
+  "name": "Aligarh",
+  "seats": [
+   {
+    "seat": "Aligarh",
+    "party": "BJP",
+    "mp": "Satish Kumar Gautam"
+   }
+  ],
+  "census": {
+   "pop": 3673889,
+   "muslim": 729283,
+   "share": 19.9
+  },
+  "qid": "Q766918",
+  "city": {
+   "en": "Aligarh",
+   "hi": "अलीगढ़",
+   "ur": "علی گڑھ"
+  },
+  "lat": 27.88,
+  "lng": 78.08
+ },
+ "Kasganj": {
+  "name": "Kasganj",
+  "seats": [
+   {
+    "seat": "Etah",
+    "party": "SP",
+    "mp": "Devesh Shakya"
+   }
+  ],
+  "census": {
+   "pop": 1436719,
+   "muslim": 213822,
+   "share": 14.9
+  },
+  "qid": "Q890800",
+  "city": {
+   "en": "Kasganj",
+   "hi": "कासगंज",
+   "ur": "کاسگنج"
+  },
+  "lat": 27.8077034,
+  "lng": 78.6456226
+ },
+ "Mathura": {
+  "name": "Mathura",
+  "seats": [
+   {
+    "seat": "Mathura",
+    "party": "BJP",
+    "mp": "Hema Malini"
+   }
+  ],
+  "census": {
+   "pop": 2547184,
+   "muslim": 216933,
+   "share": 8.5
+  },
+  "qid": "Q1773422",
+  "city": {
+   "en": "Mathura",
+   "hi": "मथुरा",
+   "ur": "متھرا"
+  },
+  "lat": 27.4924134,
+  "lng": 77.673673
+ },
+ "Shrawasti": {
+  "name": "Shrawasti",
+  "seats": [
+   {
+    "seat": "Shravasti",
+    "party": "SP",
+    "mp": "Ram Shiromani Verma"
+   }
+  ],
+  "census": {
+   "pop": 1117361,
+   "muslim": 343981,
+   "share": 30.8
+  },
+  "qid": "Q1945458",
+  "city": {
+   "en": "Bhinga",
+   "hi": "भिनगा",
+   "ur": "بھنگا"
+  },
+  "lat": 27.703333333,
+  "lng": 81.934166666
+ },
+ "Sitapur": {
+  "name": "Sitapur",
+  "seats": [
+   {
+    "seat": "Sitapur",
+    "party": "INC",
+    "mp": "Rakesh Rathore"
+   },
+   {
+    "seat": "Dhaurahra",
+    "party": "SP",
+    "mp": "Anand Bhadauriya"
+   }
+  ],
+  "census": {
+   "pop": 4483992,
+   "muslim": 893725,
+   "share": 19.9
+  },
+  "qid": "Q1812539",
+  "city": {
+   "en": "Sitapur",
+   "hi": "सीतापुर",
+   "ur": "سیتاپور"
+  },
+  "lat": 27.566666666,
+  "lng": 80.683333333
+ },
+ "Hathras": {
+  "name": "Hathras",
+  "seats": [
+   {
+    "seat": "Hathras",
+    "party": "BJP",
+    "mp": "Anoop Pradhan"
+   }
+  ],
+  "census": {
+   "pop": 1564708,
+   "muslim": 159448,
+   "share": 10.2
+  },
+  "qid": "Q1814892",
+  "city": {
+   "en": "Hathras",
+   "hi": "हाथरस",
+   "ur": "ہاتھ رس"
+  },
+  "lat": 27.36,
+  "lng": 78.03
+ },
+ "Etah": {
+  "name": "Etah",
+  "seats": [
+   {
+    "seat": "Etah",
+    "party": "SP",
+    "mp": "Devesh Shakya"
+   }
+  ],
+  "census": {
+   "pop": 1774480,
+   "muslim": 146346,
+   "share": 8.2
+  },
+  "qid": "Q1773429",
+  "city": {
+   "en": "Etah",
+   "hi": "एटा",
+   "ur": "ایٹا"
+  },
+  "lat": 27.63,
+  "lng": 78.67
+ },
+ "Hardoi": {
+  "name": "Hardoi",
+  "seats": [
+   {
+    "seat": "Hardoi",
+    "party": "BJP",
+    "mp": "Jai Prakash Rawat"
+   },
+   {
+    "seat": "Misrikh",
+    "party": "BJP",
+    "mp": "Ashok Kumar Rawat"
+   }
+  ],
+  "census": {
+   "pop": 4092845,
+   "muslim": 556219,
+   "share": 13.6
+  },
+  "qid": "Q1772822",
+  "city": {
+   "en": "Hardoi",
+   "hi": "हरदोई",
+   "ur": "ہردوئی"
+  },
+  "lat": 27.3947,
+  "lng": 80.1283
+ },
+ "Farrukhabad": {
+  "name": "Farrukhabad",
+  "seats": [
+   {
+    "seat": "Farrukhabad",
+    "party": "BJP",
+    "mp": "Mukesh Rajput"
+   }
+  ],
+  "census": {
+   "pop": 1885204,
+   "muslim": 276846,
+   "share": 14.7
+  },
+  "qid": "Q1897251",
+  "city": {
+   "en": "Fatehgarh",
+   "hi": "फ़तेहगढ़",
+   "ur": "فتح گڑھ"
+  },
+  "lat": 27.37,
+  "lng": 79.63
+ },
+ "Firozabad": {
+  "name": "Firozabad",
+  "seats": [
+   {
+    "seat": "Firozabad",
+    "party": "SP",
+    "mp": "Akshay Yadav"
+   }
+  ],
+  "census": {
+   "pop": 2498156,
+   "muslim": 314812,
+   "share": 12.6
+  },
+  "qid": "Q1946950",
+  "city": {
+   "en": "Firozabad",
+   "hi": "फ़िरोज़ाबाद",
+   "ur": "فیروزآباد"
+  },
+  "lat": 27.15,
+  "lng": 78.42
+ },
+ "Siddharthnagar": {
+  "name": "Siddharthnagar",
+  "seats": [
+   {
+    "seat": "Domariyaganj",
+    "party": "BJP",
+    "mp": "Jagdambika Pal"
+   }
+  ],
+  "census": {
+   "pop": 2559297,
+   "muslim": 748073,
+   "share": 29.2
+  },
+  "qid": null,
+  "city": {
+   "en": "Siddharthnagar",
+   "hi": "सिद्धार्थनगर",
+   "ur": "سدھارتھ نگر"
+  },
+  "lat": 27.3,
+  "lng": 83.07
+ },
+ "Mainpuri": {
+  "name": "Mainpuri",
+  "seats": [
+   {
+    "seat": "Mainpuri",
+    "party": "SP",
+    "mp": "Dimple Yadav"
+   }
+  ],
+  "census": {
+   "pop": 1868529,
+   "muslim": 100723,
+   "share": 5.4
+  },
+  "qid": "Q1816657",
+  "city": {
+   "en": "Mainpuri",
+   "hi": "मैनपुरी",
+   "ur": "مین پوری"
+  },
+  "lat": 27.23,
+  "lng": 79.02
+ },
+ "Maharajganj": {
+  "name": "Maharajganj",
+  "seats": [
+   {
+    "seat": "Maharajganj",
+    "party": "BJP",
+    "mp": "Pankaj Chaudhary"
+   }
+  ],
+  "census": {
+   "pop": 2684703,
+   "muslim": 458650,
+   "share": 17.1
+  },
+  "qid": "Q1356139",
+  "city": {
+   "en": "Mahrajganj",
+   "hi": "महाराजगंज",
+   "ur": "مہاراج گنج، اتر پردیش"
+  },
+  "lat": 27.144166666,
+  "lng": 83.562222222
+ },
+ "Agra": {
+  "name": "Agra",
+  "seats": [
+   {
+    "seat": "Agra",
+    "party": "BJP",
+    "mp": "S. P. Singh Baghel"
+   },
+   {
+    "seat": "Fatehpur Sikri",
+    "party": "BJP",
+    "mp": "Raj Kumar Chahar"
+   }
+  ],
+  "census": {
+   "pop": 4418797,
+   "muslim": 411313,
+   "share": 9.3
+  },
+  "qid": "Q606343",
+  "city": {
+   "en": "Agra",
+   "hi": "आगरा",
+   "ur": "آگرہ"
+  },
+  "lat": 27.18,
+  "lng": 78.02
+ },
+ "Gonda": {
+  "name": "Gonda",
+  "seats": [
+   {
+    "seat": "Gonda",
+    "party": "BJP",
+    "mp": "Kirti Vardhan Singh"
+   },
+   {
+    "seat": "Kaiserganj",
+    "party": "BJP",
+    "mp": "Karan Bhushan Singh"
+   }
+  ],
+  "census": {
+   "pop": 3433919,
+   "muslim": 678615,
+   "share": 19.8
+  },
+  "qid": "Q1937857",
+  "city": {
+   "en": "Gonda",
+   "hi": "गोण्डा",
+   "ur": "گونڈہ، اترپردیش"
+  },
+  "lat": 27.133333333,
+  "lng": 81.933333333
+ },
+ "Barabanki": {
+  "name": "Barabanki",
+  "seats": [
+   {
+    "seat": "Barabanki",
+    "party": "INC",
+    "mp": "Tanuj Punia"
+   }
+  ],
+  "census": {
+   "pop": 3260699,
+   "muslim": 737106,
+   "share": 22.6
+  },
+  "qid": "Q633114",
+  "city": {
+   "en": "Barabanki",
+   "hi": "बाराबंकी",
+   "ur": "بارہ بنکی، اتر پردیش"
+  },
+  "lat": 26.92,
+  "lng": 81.2
+ },
+ "Kushinagar": {
+  "name": "Kushinagar",
+  "seats": [
+   {
+    "seat": "Kushinagar",
+    "party": "BJP",
+    "mp": "Vijay Kumar Dubey"
+   }
+  ],
+  "census": {
+   "pop": 3564544,
+   "muslim": 620244,
+   "share": 17.4
+  },
+  "qid": "Q1840355",
+  "city": {
+   "en": "Padrauna",
+   "hi": "पडरौना",
+   "ur": "پڈراؤنا"
+  },
+  "lat": 26.904166666,
+  "lng": 83.980833333
+ },
+ "Kannauj": {
+  "name": "Kannauj",
+  "seats": [
+   {
+    "seat": "Kannauj",
+    "party": "SP",
+    "mp": "Akhilesh Yadav"
+   }
+  ],
+  "census": {
+   "pop": 1656616,
+   "muslim": 273967,
+   "share": 16.5
+  },
+  "qid": "Q627979",
+  "city": {
+   "en": "Kannauj",
+   "hi": "कन्नौज",
+   "ur": "قنوج"
+  },
+  "lat": 27.031336111,
+  "lng": 79.922019444
+ },
+ "Lucknow": {
+  "name": "Lucknow",
+  "seats": [
+   {
+    "seat": "Lucknow",
+    "party": "BJP",
+    "mp": "Rajnath Singh"
+   },
+   {
+    "seat": "Mohanlalganj",
+    "party": "SP",
+    "mp": "R. K. Chaudhary"
+   }
+  ],
+  "census": {
+   "pop": 4589838,
+   "muslim": 985070,
+   "share": 21.5
+  },
+  "qid": "Q1773416",
+  "city": {
+   "en": "Lucknow",
+   "hi": "लखनऊ",
+   "ur": "لکھنؤ"
+  },
+  "lat": 26.847,
+  "lng": 80.947
+ },
+ "Basti": {
+  "name": "Basti",
+  "seats": [
+   {
+    "seat": "Basti",
+    "party": "SP",
+    "mp": "Ram Prasad Chaudhary"
+   }
+  ],
+  "census": {
+   "pop": 2464464,
+   "muslim": 364510,
+   "share": 14.8
+  },
+  "qid": "Q715267",
+  "city": {
+   "en": "Basti",
+   "hi": "बस्ती, उत्तर प्रदेश",
+   "ur": "بستی، اترپردیش"
+  },
+  "lat": 26.794444444,
+  "lng": 82.732777777
+ },
+ "Gorakhpur": {
+  "name": "Gorakhpur",
+  "seats": [
+   {
+    "seat": "Gorakhpur",
+    "party": "BJP",
+    "mp": "Ravindra Kishan Shukla"
+   },
+   {
+    "seat": "Bansgaon",
+    "party": "BJP",
+    "mp": "Kamlesh Paswan"
+   }
+  ],
+  "census": {
+   "pop": 4440895,
+   "muslim": 403847,
+   "share": 9.1
+  },
+  "qid": "Q1144349",
+  "city": {
+   "en": "Gorakhpur",
+   "hi": "गोरखपुर",
+   "ur": "گورکھپور"
+  },
+  "lat": 26.761111111,
+  "lng": 83.366666666
+ },
+ "Sant Kabir Nagar": {
+  "name": "Sant Kabir Nagar",
+  "seats": [
+   {
+    "seat": "Sant Kabir Nagar",
+    "party": "SP",
+    "mp": "Laxmikant"
+   }
+  ],
+  "census": {
+   "pop": 1715183,
+   "muslim": 404410,
+   "share": 23.6
+  },
+  "qid": "Q1945445",
+  "city": {
+   "en": "Khalilabad",
+   "hi": "खलीलाबाद",
+   "ur": "خلیل آباد"
+  },
+  "lat": 26.774444444,
+  "lng": 83.070833333
+ },
+ "Unnao": {
+  "name": "Unnao",
+  "seats": [
+   {
+    "seat": "Unnao",
+    "party": "BJP",
+    "mp": "Sakshi Maharaj"
+   }
+  ],
+  "census": {
+   "pop": 3108367,
+   "muslim": 363453,
+   "share": 11.7
+  },
+  "qid": "Q1937875",
+  "city": {
+   "en": "Unnao",
+   "hi": "उन्नाव",
+   "ur": "اناؤ"
+  },
+  "lat": 26.55,
+  "lng": 80.48
+ },
+ "Etawah": {
+  "name": "Etawah",
+  "seats": [
+   {
+    "seat": "Etawah",
+    "party": "SP",
+    "mp": "Jitendra Kumar Dohare"
+   }
+  ],
+  "census": {
+   "pop": 1581810,
+   "muslim": 113961,
+   "share": 7.2
+  },
+  "qid": "Q1815288",
+  "city": {
+   "en": "Etawah",
+   "hi": "इटावा",
+   "ur": "اٹاوہ"
+  },
+  "lat": 26.77,
+  "lng": 79.03
+ },
+ "Kanpur Nagar": {
+  "name": "Kanpur Nagar",
+  "seats": [
+   {
+    "seat": "Kanpur",
+    "party": "BJP",
+    "mp": "Ramesh Awasthi"
+   },
+   {
+    "seat": "Akbarpur",
+    "party": "BJP",
+    "mp": "Devendra Singh"
+   }
+  ],
+  "census": {
+   "pop": 4581268,
+   "muslim": 720660,
+   "share": 15.7
+  },
+  "qid": "Q2089152",
+  "city": {
+   "en": "Kanpur",
+   "hi": "कानपुर",
+   "ur": "کانپور"
+  },
+  "lat": 26.4725,
+  "lng": 80.331111111
+ },
+ "Auraiya": {
+  "name": "Auraiya",
+  "seats": [
+   {
+    "seat": "Etawah",
+    "party": "SP",
+    "mp": "Jitendra Kumar Dohare"
+   }
+  ],
+  "census": {
+   "pop": 1379545,
+   "muslim": 101963,
+   "share": 7.4
+  },
+  "qid": "Q1812533",
+  "city": {
+   "en": "Auraiya",
+   "hi": "औरया",
+   "ur": "اوریا (شہر)"
+  },
+  "lat": 26.463055555,
+  "lng": 79.511666666
+ },
+ "Ayodhya": {
+  "name": "Ayodhya",
+  "seats": [
+   {
+    "seat": "Faizabad",
+    "party": "SP",
+    "mp": "Awadhesh Prasad"
+   }
+  ],
+  "census": {
+   "pop": 2470996,
+   "muslim": 365806,
+   "share": 14.8
+  },
+  "qid": "Q1814132",
+  "city": {
+   "en": "Ayodhya",
+   "hi": "अयोध्या",
+   "ur": "ایودھیا"
+  },
+  "lat": 26.799166666,
+  "lng": 82.204444444
+ },
+ "Kanpur Dehat": {
+  "name": "Kanpur Dehat",
+  "seats": [
+   {
+    "seat": "Akbarpur",
+    "party": "BJP",
+    "mp": "Devendra Singh"
+   }
+  ],
+  "census": {
+   "pop": 1796184,
+   "muslim": 176327,
+   "share": 9.8
+  },
+  "qid": "Q610612",
+  "city": {
+   "en": "Akbarpur",
+   "hi": "अकबरपुर, कानपुर देहात",
+   "ur": "اکبرپور، کانپور دیہات"
+  },
+  "lat": 26.379,
+  "lng": 79.951
+ },
+ "Deoria": {
+  "name": "Deoria",
+  "seats": [
+   {
+    "seat": "Deoria",
+    "party": "BJP",
+    "mp": "Shashank Mani Tripathi"
+   },
+   {
+    "seat": "Salempur",
+    "party": "SP",
+    "mp": "Ramashankar Rajbhar"
+   }
+  ],
+  "census": {
+   "pop": 3100946,
+   "muslim": 358539,
+   "share": 11.6
+  },
+  "qid": "Q731746",
+  "city": {
+   "en": "Deoria, Uttar Pradesh",
+   "hi": "देवरिया",
+   "ur": "دیوریا، اترپردیش"
+  },
+  "lat": 26.501666666,
+  "lng": 83.779166666
+ },
+ "Sultanpur": {
+  "name": "Sultanpur",
+  "seats": [
+   {
+    "seat": "Sultanpur",
+    "party": "SP",
+    "mp": "Rambhual Nishad"
+   }
+  ],
+  "census": {
+   "pop": 3108367,
+   "muslim": 650261,
+   "share": 20.9
+  },
+  "qid": "Q1356154",
+  "city": {
+   "en": "Sultanpur",
+   "hi": "सुलतानपुर, उत्तर प्रदेश",
+   "ur": "سلطان پور"
+  },
+  "lat": 26.261666666,
+  "lng": 82.071666666
+ },
+ "Ambedkar Nagar": {
+  "name": "Ambedkar Nagar",
+  "seats": [
+   {
+    "seat": "Ambedkar Nagar",
+    "party": "SP",
+    "mp": "Lalji Verma"
+   }
+  ],
+  "census": {
+   "pop": 2397888,
+   "muslim": 401678,
+   "share": 16.8
+  },
+  "qid": "Q456764",
+  "city": {
+   "en": "Akbarpur",
+   "hi": "अकबरपुर",
+   "ur": "اکبر پور، امبیڈکر نگر"
+  },
+  "lat": 26.52,
+  "lng": 82.62
+ },
+ "Rae Bareli": {
+  "name": "Rae Bareli",
+  "seats": [
+   {
+    "seat": "Rae Bareli",
+    "party": "INC",
+    "mp": "Rahul Gandhi"
+   }
+  ],
+  "census": {
+   "pop": 3405559,
+   "muslim": 413243,
+   "share": 12.1
+  },
+  "qid": "Q1321157",
+  "city": {
+   "en": "Raebareli",
+   "hi": "रायबरेली",
+   "ur": "رائے بریلی"
+  },
+  "lat": 26.233838888,
+  "lng": 81.233597222
+ },
+ "Jalaun": {
+  "name": "Jalaun",
+  "seats": [
+   {
+    "seat": "Jalaun",
+    "party": "SP",
+    "mp": "Narayan Das Ahirwar"
+   }
+  ],
+  "census": {
+   "pop": 1689974,
+   "muslim": 171581,
+   "share": 10.2
+  },
+  "qid": "Q2089115",
+  "city": {
+   "en": "Orai",
+   "hi": "उरई",
+   "ur": "اورئی"
+  },
+  "lat": 25.98,
+  "lng": 79.47
+ },
+ "Azamgarh": {
+  "name": "Azamgarh",
+  "seats": [
+   {
+    "seat": "Azamgarh",
+    "party": "SP",
+    "mp": "Dharmendra Yadav"
+   },
+   {
+    "seat": "Lalganj",
+    "party": "SP",
+    "mp": "Daroga Saroj"
+   }
+  ],
+  "census": {
+   "pop": 4613913,
+   "muslim": 718692,
+   "share": 15.6
+  },
+  "qid": "Q793553",
+  "city": {
+   "en": "Azamgarh",
+   "hi": "आजमगढ़",
+   "ur": "اعظم گڑھ"
+  },
+  "lat": 26.06,
+  "lng": 83.19
+ },
+ "Mau": {
+  "name": "Mau",
+  "seats": [
+   {
+    "seat": "Ghosi",
+    "party": "SP",
+    "mp": "Rajeev Kumar Rai"
+   }
+  ],
+  "census": {
+   "pop": 2205968,
+   "muslim": 428555,
+   "share": 19.4
+  },
+  "qid": "Q1518847",
+  "city": {
+   "en": "Mau",
+   "hi": "मऊ जिला",
+   "ur": "مئو"
+  },
+  "lat": 25.941666666,
+  "lng": 83.561111111
+ },
+ "Fatehpur": {
+  "name": "Fatehpur",
+  "seats": [
+   {
+    "seat": "Fatehpur",
+    "party": "SP",
+    "mp": "Naresh Uttam Patel"
+   }
+  ],
+  "census": {
+   "pop": 2632733,
+   "muslim": 350700,
+   "share": 13.3
+  },
+  "qid": "Q1946829",
+  "city": {
+   "en": "Fatehpur",
+   "hi": "फतेहपुर, उत्तर प्रदेश",
+   "ur": "فتح پور، اتر پردیش"
+  },
+  "lat": 25.93,
+  "lng": 80.8
+ },
+ "Ballia": {
+  "name": "Ballia",
+  "seats": [
+   {
+    "seat": "Ballia",
+    "party": "SP",
+    "mp": "Sanatan Pandey"
+   },
+   {
+    "seat": "Salempur",
+    "party": "SP",
+    "mp": "Ramashankar Rajbhar"
+   }
+  ],
+  "census": {
+   "pop": 3239774,
+   "muslim": 213440,
+   "share": 6.6
+  },
+  "qid": "Q584644",
+  "city": {
+   "en": "Ballia",
+   "hi": "बलिया",
+   "ur": "بلیا"
+  },
+  "lat": 25.7625,
+  "lng": 84.151944444
+ },
+ "Jaunpur": {
+  "name": "Jaunpur",
+  "seats": [
+   {
+    "seat": "Jaunpur",
+    "party": "SP",
+    "mp": "Babu Singh Kushwaha"
+   },
+   {
+    "seat": "Machhlishahr",
+    "party": "SP",
+    "mp": "Priya Saroj"
+   }
+  ],
+  "census": {
+   "pop": 4494204,
+   "muslim": 483750,
+   "share": 10.8
+  },
+  "qid": "Q1356060",
+  "city": {
+   "en": "Jaunpur",
+   "hi": "जौनपुर",
+   "ur": "جونپور، اترپردیش"
+  },
+  "lat": 25.753611111,
+  "lng": 82.686944444
+ },
+ "Jhansi": {
+  "name": "Jhansi",
+  "seats": [
+   {
+    "seat": "Jhansi",
+    "party": "BJP",
+    "mp": "Anurag Sharma"
+   }
+  ],
+  "census": {
+   "pop": 1998603,
+   "muslim": 147842,
+   "share": 7.4
+  },
+  "qid": "Q1937885",
+  "city": {
+   "en": "Jhansi",
+   "hi": "झाँसी",
+   "ur": "جھانسی"
+  },
+  "lat": 25.44862,
+  "lng": 78.56962
+ },
+ "Banda": {
+  "name": "Banda",
+  "seats": [
+   {
+    "seat": "Banda",
+    "party": "SP",
+    "mp": "Krishna Devi Patel"
+   }
+  ],
+  "census": {
+   "pop": 1799410,
+   "muslim": 157612,
+   "share": 8.8
+  },
+  "qid": "Q2131759",
+  "city": {
+   "en": "Banda",
+   "hi": "बांदा",
+   "ur": "باندہ"
+  },
+  "lat": 25.483333333,
+  "lng": 80.333333333
+ },
+ "Ghazipur": {
+  "name": "Ghazipur",
+  "seats": [
+   {
+    "seat": "Ghazipur",
+    "party": "SP",
+    "mp": "Afzal Ansari"
+   }
+  ],
+  "census": {
+   "pop": 3620268,
+   "muslim": 368153,
+   "share": 10.2
+  },
+  "qid": "Q1287993",
+  "city": {
+   "en": "Ghazipur",
+   "hi": "ग़ाज़ीपुर",
+   "ur": "غازی پور"
+  },
+  "lat": 25.583333333,
+  "lng": 83.566666666
+ },
+ "Kaushambi": {
+  "name": "Kaushambi",
+  "seats": [
+   {
+    "seat": "Kaushambi",
+    "party": "SP",
+    "mp": "Pushpendra Saroj"
+   }
+  ],
+  "census": {
+   "pop": 1599596,
+   "muslim": 220423,
+   "share": 13.8
+  },
+  "qid": "Q1946937",
+  "city": {
+   "en": "Manjhanpur",
+   "hi": "मंझनपुर",
+   "ur": "منجھن پور"
+  },
+  "lat": 25.530555555,
+  "lng": 81.376666666
+ },
+ "Prayagraj": {
+  "name": "Prayagraj",
+  "seats": [
+   {
+    "seat": "Allahabad",
+    "party": "INC",
+    "mp": "Ujjwal Rewati Singh"
+   },
+   {
+    "seat": "Phulpur",
+    "party": "BJP",
+    "mp": "Praveen Patel"
+   }
+  ],
+  "census": {
+   "pop": 5954391,
+   "muslim": 796756,
+   "share": 13.4
+  },
+  "qid": "Q1773426",
+  "city": {
+   "en": "Prayagraj",
+   "hi": "प्रयागराज",
+   "ur": "الہ آباد"
+  },
+  "lat": 25.45,
+  "lng": 81.85
+ },
+ "Varanasi": {
+  "name": "Varanasi",
+  "seats": [
+   {
+    "seat": "Varanasi",
+    "party": "BJP",
+    "mp": "Narendra Modi"
+   }
+  ],
+  "census": {
+   "pop": 3676841,
+   "muslim": 546987,
+   "share": 14.9
+  },
+  "qid": "Q1321140",
+  "city": {
+   "en": "Varanasi",
+   "hi": "वाराणसी",
+   "ur": "بنارس"
+  },
+  "lat": 25.318888888,
+  "lng": 83.012777777
+ },
+ "Chitrakoot": {
+  "name": "Chitrakoot",
+  "seats": [
+   {
+    "seat": "Banda",
+    "party": "SP",
+    "mp": "Krishna Devi Patel"
+   }
+  ],
+  "census": {
+   "pop": 991730,
+   "muslim": 34559,
+   "share": 3.5
+  },
+  "qid": "Q2089141",
+  "city": {
+   "en": "Chitrakoot Dham",
+   "hi": "चित्रकूट धाम",
+   "ur": "چترکوٹ دھام (کڑوی)"
+  },
+  "lat": 25.2,
+  "lng": 80.9
+ },
+ "Chandauli": {
+  "name": "Chandauli",
+  "seats": [
+   {
+    "seat": "Chandauli",
+    "party": "SP",
+    "mp": "Virendra Singh"
+   }
+  ],
+  "census": {
+   "pop": 1952756,
+   "muslim": 215081,
+   "share": 11
+  },
+  "qid": "Q2733369",
+  "city": {
+   "en": "Chandauli",
+   "hi": "चन्दौली",
+   "ur": "چندولی"
+  },
+  "lat": 25.256944444,
+  "lng": 83.267777777
+ },
+ "Bhadohi": {
+  "name": "Bhadohi",
+  "seats": [
+   {
+    "seat": "Bhadohi",
+    "party": "BJP",
+    "mp": "Vinod Kumar Bind"
+   }
+  ],
+  "census": {
+   "pop": 1578213,
+   "muslim": 203887,
+   "share": 12.9
+  },
+  "qid": "Q127533",
+  "city": {
+   "en": "Gyanpur",
+   "hi": "ज्ञानपुर, भदोही ज़िला",
+   "ur": "گیانپور"
+  },
+  "lat": 25.3334864,
+  "lng": 82.465065
+ },
+ "Mirzapur": {
+  "name": "Mirzapur",
+  "seats": [
+   {
+    "seat": "Mirzapur",
+    "party": "ADS",
+    "mp": "Anupriya Patel"
+   }
+  ],
+  "census": {
+   "pop": 2496970,
+   "muslim": 195765,
+   "share": 7.8
+  },
+  "qid": "Q1143894",
+  "city": {
+   "en": "Mirzapur-cum-Vindhyachal",
+   "hi": "मिर्ज़ापुर",
+   "ur": "مرزاپور"
+  },
+  "lat": 25.145,
+  "lng": 82.565277777
+ },
+ "Lalitpur": {
+  "name": "Lalitpur",
+  "seats": [
+   {
+    "seat": "Jhansi",
+    "party": "BJP",
+    "mp": "Anurag Sharma"
+   }
+  ],
+  "census": {
+   "pop": 1221592,
+   "muslim": 33724,
+   "share": 2.8
+  },
+  "qid": "Q1947336",
+  "city": {
+   "en": "Lalitpur",
+   "hi": "ललितपुर",
+   "ur": "للتپور، بھارت"
+  },
+  "lat": 24.690277777,
+  "lng": 78.418888888
+ },
+ "Sonbhadra": {
+  "name": "Sonbhadra",
+  "seats": [
+   {
+    "seat": "Robertsganj",
+    "party": "SP",
+    "mp": "Chhotelal Kharwar"
+   }
+  ],
+  "census": {
+   "pop": 1862559,
+   "muslim": 103567,
+   "share": 5.6
+  },
+  "qid": "Q607798",
+  "city": {
+   "en": "Robertsganj",
+   "hi": "राबर्ट्सगंज",
+   "ur": "روبرٹس گنج"
+  },
+  "lat": 24.7,
+  "lng": 83.06666667
+ },
+ "Amethi": {
+  "name": "Amethi",
+  "seats": [
+   {
+    "seat": "Amethi",
+    "party": "INC",
+    "mp": "Kishori Lal Sharma"
+   }
+  ],
+  "census": null,
+  "qid": "Q1071494",
+  "city": {
+   "en": "Gauriganj",
+   "ur": "گوری گنج، نیپال"
+  },
+  "lat": 26.433333333,
+  "lng": 87.733333333
+ },
+ "Ghaziabad": {
+  "name": "Ghaziabad",
+  "seats": [
+   {
+    "seat": "Ghaziabad",
+    "party": "BJP",
+    "mp": "Atul Garg"
+   }
+  ],
+  "census": {
+   "pop": 4681645,
+   "muslim": 936829,
+   "share": 20
+  },
+  "qid": "Q1773444",
+  "city": {
+   "en": "Ghaziabad",
+   "hi": "गाज़ियाबाद",
+   "ur": "غازی آباد، بھارت"
+  },
+  "lat": 28.666666666,
+  "lng": 77.416666666
+ },
+ "Sambhal": {
+  "name": "Sambhal",
+  "seats": [
+   {
+    "seat": "Sambhal",
+    "party": "SP",
+    "mp": "Zia ur Rahman Barq"
+   }
+  ],
+  "census": null,
+  "qid": "Q3000436",
+  "city": {
+   "en": "Bahjoi",
+   "hi": "बहज़ोई",
+   "ur": "بہجوئی"
+  },
+  "lat": 28.393,
+  "lng": 78.623
+ },
+ "Mahoba": {
+  "name": "Mahoba",
+  "seats": [
+   {
+    "seat": "Hamirpur",
+    "party": "SP",
+    "mp": "Ajendra Singh Lodhi"
+   }
+  ],
+  "census": {
+   "pop": 875958,
+   "muslim": 57454,
+   "share": 6.6
+  },
+  "qid": "Q1815322",
+  "city": {
+   "en": "Mahoba",
+   "hi": "महोबा",
+   "ur": "ماہوبا"
+  },
+  "lat": 25.28,
+  "lng": 79.872885
+ },
+ "Saharanpur": {
+  "name": "Saharanpur",
+  "seats": [
+   {
+    "seat": "Saharanpur",
+    "party": "INC",
+    "mp": "Imran Masood"
+   }
+  ],
+  "census": {
+   "pop": 3466382,
+   "muslim": 1454052,
+   "share": 41.9
+  },
+  "qid": "Q1797326",
+  "city": {
+   "en": "Saharanpur",
+   "hi": "सहारनपुर",
+   "ur": "سہارنپور"
+  },
+  "lat": 29.964,
+  "lng": 77.546
+ },
+ "Bijnor": {
+  "name": "Bijnor",
+  "seats": [
+   {
+    "seat": "Bijnor",
+    "party": "RLD",
+    "mp": "Chandan Chauhan"
+   },
+   {
+    "seat": "Nagina",
+    "party": "ASP",
+    "mp": "Chandrashekhar Azad"
+   }
+  ],
+  "census": {
+   "pop": 3682713,
+   "muslim": 1585210,
+   "share": 43
+  },
+  "qid": "Q1937865",
+  "city": {
+   "en": "Bijnor",
+   "hi": "बिजनौर",
+   "ur": "بجنور"
+  },
+  "lat": 29.37,
+  "lng": 78.13
+ },
+ "Muzaffarnagar": {
+  "name": "Muzaffarnagar",
+  "seats": [
+   {
+    "seat": "Muzaffarnagar",
+    "party": "SP",
+    "mp": "Harendra Singh Malik"
+   }
+  ],
+  "census": {
+   "pop": 4143512,
+   "muslim": 1711453,
+   "share": 41.3
+  },
+  "qid": "Q2365710",
+  "city": {
+   "en": "Muzaffarnagar",
+   "hi": "मुज़फ़्फ़र नगर",
+   "ur": "مظفر نگر"
+  },
+  "lat": 29.4675,
+  "lng": 77.705
+ },
+ "Baghpat": {
+  "name": "Baghpat",
+  "seats": [
+   {
+    "seat": "Baghpat",
+    "party": "RLD",
+    "mp": "Rajkumar Sangwan"
+   }
+  ],
+  "census": {
+   "pop": 1303048,
+   "muslim": 364583,
+   "share": 28
+  },
+  "qid": "Q2085367",
+  "city": {
+   "en": "Baghpat",
+   "hi": "बागपत",
+   "ur": "باغپت"
+  },
+  "lat": 28.944,
+  "lng": 77.218
+ },
+ "Meerut": {
+  "name": "Meerut",
+  "seats": [
+   {
+    "seat": "Meerut",
+    "party": "BJP",
+    "mp": "Arun Govil"
+   }
+  ],
+  "census": {
+   "pop": 3443689,
+   "muslim": 998969,
+   "share": 29
+  },
+  "qid": "Q1764627",
+  "city": {
+   "en": "Meerut",
+   "hi": "मेरठ",
+   "ur": "میرٹھ"
+  },
+  "lat": 28.98,
+  "lng": 77.706388888
+ },
+ "Moradabad": {
+  "name": "Moradabad",
+  "seats": [
+   {
+    "seat": "Moradabad",
+    "party": "SP",
+    "mp": "Ruchi Veera"
+   }
+  ],
+  "census": {
+   "pop": 3126507,
+   "muslim": 1588297,
+   "share": 50.8
+  },
+  "qid": "Q1345006",
+  "city": {
+   "en": "Moradabad",
+   "hi": "मुरादाबाद",
+   "ur": "مراد آباد"
+  },
+  "lat": 28.838888888,
+  "lng": 78.776944444
+ },
+ "Rampur": {
+  "name": "Rampur",
+  "seats": [
+   {
+    "seat": "Rampur",
+    "party": "SP",
+    "mp": "Mohibbullah Nadvi"
+   }
+  ],
+  "census": {
+   "pop": 2335819,
+   "muslim": 1181337,
+   "share": 50.6
+  },
+  "qid": "Q1815331",
+  "city": {
+   "en": "Rampur",
+   "hi": "रामपुर, उत्तर प्रदेश",
+   "ur": "رام پور"
+  },
+  "lat": 28.81014,
+  "lng": 79.02699
+ },
+ "Shamli": {
+  "name": "Shamli",
+  "seats": [
+   {
+    "seat": "Kairana",
+    "party": "SP",
+    "mp": "Iqra Choudhary"
+   }
+  ],
+  "census": null,
+  "qid": "Q2999938",
+  "city": {
+   "en": "Shamli",
+   "hi": "शामली",
+   "ur": "شاملی"
+  },
+  "lat": 29.45,
+  "lng": 77.32
+ },
+ "Balrampur": {
+  "name": "Balrampur",
+  "seats": [
+   {
+    "seat": "Shravasti",
+    "party": "SP",
+    "mp": "Ram Shiromani Verma"
+   }
+  ],
+  "census": {
+   "pop": 2148665,
+   "muslim": 805975,
+   "share": 37.5
+  },
+  "qid": "Q1948380",
+  "city": {
+   "en": "Balrampur",
+   "hi": "बलरामपुर",
+   "ur": "بلرام پور"
+  },
+  "lat": 27.4295126,
+  "lng": 82.1854602
+ },
+ "Hamirpur": {
+  "name": "Hamirpur",
+  "seats": [
+   {
+    "seat": "Hamirpur",
+    "party": "SP",
+    "mp": "Ajendra Singh Lodhi"
+   }
+  ],
+  "census": {
+   "pop": 1104285,
+   "muslim": 91269,
+   "share": 8.3
+  },
+  "qid": "Q2019757",
+  "city": {
+   "en": "Hamirpur",
+   "hi": "हमीरपुर, उत्तर प्रदेश",
+   "ur": "ہمیرپور، اترپردیش"
+  },
+  "lat": 25.95,
+  "lng": 80.15
+ },
+ "Pratapgarh": {
+  "name": "Pratapgarh",
+  "seats": [
+   {
+    "seat": "Pratapgarh",
+    "party": "SP",
+    "mp": "S. P. Singh Patel"
+   }
+  ],
+  "census": {
+   "pop": 3209141,
+   "muslim": 452394,
+   "share": 14.1
+  },
+  "qid": "Q1473962",
+  "city": {
+   "en": "Pratapgarh, Uttar Pradesh",
+   "hi": "प्रतापगढ़, उत्तर प्रदेश",
+   "ur": "پرتاپ گڑھ، اتر پردیش"
+  },
+  "lat": 25.9,
+  "lng": 81.95
+ }
+}
