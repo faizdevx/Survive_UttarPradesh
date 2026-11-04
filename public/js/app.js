@@ -167,20 +167,69 @@ function renderLegend() {
     : 'Muslim share from Census 2011, district level. India has published no caste count since 1931, so caste blocs are what the press names, shown on hover.';
 }
 
+const UP_TILES = [[23.4, 76.7], [30.8, 85.1]];
+// Paints over everything outside the state, including the place names of its neighbours
+function hideOutsideUp(map, outline) {
+  map.createPane('outside');
+  map.getPane('outside').style.zIndex = 645;
+  map.getPane('outside').style.pointerEvents = 'none';
+  const renderer = L.svg({ pane: 'outside', padding: 1 });
+  const rings = outline.coordinates.map((p) => p[0].map(([lng, lat]) => [lat, lng]));
+  L.polygon([[[-85, -180], [85, -180], [85, 180], [-85, 180]], ...rings], { renderer, stroke: false, fillColor: 'url(#outsideUp)', fillOpacity: 1, interactive: false, smoothFactor: 0 }).addTo(map);
+  L.polygon(rings, { renderer, color: '#f2c14e', weight: 3, fill: false, interactive: false, smoothFactor: 0 }).addTo(map);
+  renderer._container.insertAdjacentHTML('afterbegin', '<defs><pattern id="outsideUp" patternUnits="userSpaceOnUse" width="260" height="260"><rect width="260" height="260" fill="#7c1113"/><image href="img/poster/mandala.svg" width="260" height="260"/></pattern></defs>');
+}
+// The poster art covers part of the map, so UP is fitted inside what stays visible
+function fitUp(animate = true) {
+  const box = $('#map').getBoundingClientRect();
+  const portrait = innerWidth <= 860 && innerHeight > innerWidth;
+  const art = $('.cast').getBoundingClientRect();
+  const side = $('.rola').getBoundingClientRect();
+  const pad = portrait
+    ? { paddingTopLeft: [8, side.bottom - box.top + 8], paddingBottomRight: [8, 76] }
+    : { paddingTopLeft: [Math.max(12, side.right - box.left + 12), 40], paddingBottomRight: [art.height && innerWidth > 1100 ? 170 : 12, art.height ? art.height * .62 : 40] };
+  state.map.once('moveend', () => { state.homeZoom = state.map.getZoom(); });
+  state.map.fitBounds(state.layer.getBounds(), { ...pad, animate });
+}
+function openAbout() {
+  const box = $('#dossier');
+  ghoomo.leave();
+  box.hidden = false;
+  box.classList.remove('peek');
+  box.classList.add('sheet');
+  box.scrollTop = 0;
+  box.innerHTML = `<button class="close" id="closeBtn" aria-label="Close">X</button>
+    <div class="about">
+      <img src="img/poster/wordmark.webp" alt="Uttar Pradesh, written in the shape of the state">
+      <h1>About this map</h1>
+      <p>Pick any of the 75 districts to see who holds the seat, who comes from there, what is being built, what the papers say, and where to eat.</p>
+      <p>Figures come from public records: MyNeta, MPLADS, PRS, CAG, Wikidata and OpenStreetMap. Gaps in the records stay visible.</p>
+      <p>The leaders on the home page are edited poster art, made as satire. They are not real photos and no leader or party endorses this site.</p>
+    </div>`;
+  $('#closeBtn').addEventListener('click', closeDossier);
+  go('about');
+}
+async function goHome() {
+  if (chunav.on) await setChunav(false);
+  closeDossier();
+  $('#districtPick').value = '';
+  fitUp();
+}
+
 async function initMap() {
-  const map = L.map('map', { zoomControl: innerWidth > 860, zoomSnap: 0.25, minZoom: 5, maxBounds: [[8, 60], [40, 100]] }).setView([27.0, 80.6], 7);
+  const map = L.map('map', { zoomControl: innerWidth > 860, zoomSnap: 0.25, minZoom: 5, maxBounds: [[14, 66], [38, 96]] }).setView([27.0, 80.6], 7);
   state.map = map;
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagery Esri, Maxar. Places OpenStreetMap, Wikidata', maxZoom: 19 }).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagery Esri, Maxar. Places OpenStreetMap, Wikidata', maxZoom: 19, bounds: UP_TILES }).addTo(map);
   map.createPane('labels');
   map.getPane('labels').style.zIndex = 640;
   map.getPane('labels').style.pointerEvents = 'none';
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { pane: 'labels', maxZoom: 19 }).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { pane: 'labels', maxZoom: 19, bounds: UP_TILES }).addTo(map);
   state.pins = L.layerGroup().addTo(map);
 
   state.newsPins = L.layerGroup().addTo(map);
   state.statePins = L.layerGroup().addTo(map);
   state.ghoomoPins = L.layerGroup().addTo(map);
-  const [districts, geo, netas] = await Promise.all(['data/districts.json', 'data/up.geojson', 'data/netas.json'].map((u) => fetch(u).then((r) => r.json())));
+  const [districts, geo, netas, outline] = await Promise.all(['data/districts.json', 'data/up.geojson', 'data/netas.json', 'data/up-outline.geojson'].map((u) => fetch(u).then((r) => r.json())));
   state.districts = districts;
   state.netas = netas;
   state.geo = geo;
@@ -192,12 +241,26 @@ async function initMap() {
       layer.on('click', () => { if (state.overlay?.click) state.overlay.click(name); else if (!state.exploring) openCity(name); });
     },
   }).addTo(map);
-  // Panels cover part of the map, so UP is fitted inside what stays visible
+  hideOutsideUp(map, outline);
   const phone = innerWidth <= 860;
-  const panelEdge = $('.rola').getBoundingClientRect();
-  map.fitBounds(state.layer.getBounds(), phone && innerHeight > innerWidth ? { paddingTopLeft: [8, 160], paddingBottomRight: [8, 96] } : { paddingTopLeft: [panelEdge.right + 12, 12], paddingBottomRight: [12, 12] });
+  // The page can change size after loading, so the home view follows while nothing else is open
+  map.on('resize', () => { if ($('#dossier').hidden && !document.body.classList.contains('close-up')) fitUp(); });
 
-  map.on('zoomend', () => state.layer.setStyle(style));
+  map.on('zoomend', () => {
+    state.layer.setStyle(style);
+    // Zoomed in, the map needs the room more than the poster does
+    document.body.classList.toggle('close-up', map.getZoom() > state.homeZoom + .4);
+  });
+  $('#navHome').addEventListener('click', goHome);
+  $('#navCrest').addEventListener('click', goHome);
+  $('#navExplore').addEventListener('click', () => ghoomo.open('hub'));
+  $('#navData').addEventListener('click', () => ghoomo.open('hisaab'));
+  $('#navAbout').addEventListener('click', openAbout);
+  $('#topPick').addEventListener('click', () => {
+    const pick = $('#districtPick');
+    pick.focus();
+    try { pick.showPicker(); } catch { /* Older browsers: focus is enough */ }
+  });
   $('#districtPick').insertAdjacentHTML('beforeend', Object.keys(districts).sort().map((n) => `<option>${esc(n)}</option>`).join(''));
   $('#districtPick').addEventListener('change', (e) => { if (e.target.value) openCity(e.target.value); });
   renderLegend();
@@ -221,6 +284,8 @@ async function initMap() {
     $('#rolaToggle').setAttribute('aria-expanded', !body.hidden);
   });
   if (phone) $('#rolaToggle').click();
+  // Measured only now, once the card has its final height
+  fitUp(false);
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && (!$('#dossier').hidden || document.body.classList.contains('samay-on'))) closeDossier(); });
   addEventListener('popstate', route);
   syncPeek();
@@ -363,6 +428,7 @@ async function route() {
     if (!chunav.on) await setChunav(true);
     if (chunav.seats[value] && chunav.current !== Number(value)) openSeat(Number(value));
   } else if (kind === 'ghoomo') ghoomo.open(value);
+  else if (kind === 'about') openAbout();
   else if (!$('#dossier').hidden || document.body.classList.contains('samay-on')) closeDossier();
 }
 async function places(keys, radius) {
