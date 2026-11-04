@@ -11,7 +11,7 @@ const UA = 'Mozilla/5.0 SurviveUP/0.1 (github.com/faizdevx/Survive_UttarPradesh)
 const TTL = 10 * 60 * 1000;
 const cache = new Map();
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.geojson': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.geojson': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
 // Overpass filters. The client picks a key, never raw query text.
 const OSM = {
@@ -589,9 +589,9 @@ const server = http.createServer(async (req, res) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     const ext = path.extname(file);
     const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', Vary: 'Accept-Encoding' };
-    if (ext === '.jpg') headers['Cache-Control'] = 'public, max-age=86400';
+    if (ext === '.jpg' || ext === '.webp') headers['Cache-Control'] = 'public, max-age=86400';
     // Text compresses well, which matters for the seat map on a phone
-    if (ext !== '.jpg' && ext !== '.png' && /gzip/.test(req.headers['accept-encoding'] || '')) {
+    if (ext !== '.jpg' && ext !== '.png' && ext !== '.webp' && /gzip/.test(req.headers['accept-encoding'] || '')) {
       headers['Content-Encoding'] = 'gzip';
       res.writeHead(200, headers);
       return res.end(zlib.gzipSync(data));
