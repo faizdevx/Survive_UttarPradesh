@@ -57,23 +57,50 @@ function intro() {
   const shutDown = async () => {
     tv.classList.add('off');
     clearInterval(clock);
-    setTimeout(() => { tv.remove(); state.map.invalidateSize(); }, 900);
+    setTimeout(() => { tv.remove(); state.map?.invalidateSize(); }, 900);
   };
 
-  $('#powerBtn').addEventListener('click', async () => {
+  let busy = false;
+  const askedAge = () => !$('#tvAge').hidden;
+  const enter = async (ms) => {
+    busy = true;
+    await burst(ms);
+    shutDown();
+  };
+  const power = async () => {
+    if (busy) return;
+    // On the age screen the big button moves things on as well, so nobody gets stuck there
+    if (askedAge()) {
+      if ($('#ageInput').value && !$('#ageInput').checkValidity()) { $('#tvAge').reportValidity(); return; }
+      const age = Number($('#ageInput').value);
+      if (age) { state.age = age; store.set('age', age); }
+      enter(300);
+      return;
+    }
+    busy = true;
     await burst(450);
+    busy = false;
     if (state.age) return shutDown();
     $('#tvTitle').hidden = true;
     $('#tvAge').hidden = false;
-    $('#powerBtn').textContent = 'Back on';
-    $('#ageInput').focus();
+    $('#powerBtn').textContent = 'Open map';
+    if (matchMedia('(hover: hover)').matches) $('#ageInput').focus();
+  };
+  // Counts any press that began on the button, even if the release lands just beside it
+  let pressed = false;
+  $('#powerBtn').addEventListener('pointerdown', () => { pressed = true; });
+  tv.addEventListener('click', (e) => {
+    const on = e.target.closest('#powerBtn');
+    if (on || pressed) power();
+    pressed = false;
   });
+  $('#ageSkip').addEventListener('click', () => { if (!busy) enter(300); });
   $('#tvAge').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (busy) return;
     state.age = Number($('#ageInput').value);
     store.set('age', state.age);
-    await burst(300);
-    shutDown();
+    enter(300);
   });
 }
 
@@ -260,7 +287,7 @@ function nearMe() {
 }
 
 /* Places */
-const ageBand = () => (state.age < 18 ? 'teen' : state.age < 31 ? 'young' : state.age < 50 ? 'mid' : 'senior');
+const ageBand = () => (!state.age ? 'young' : state.age < 18 ? 'teen' : state.age < 31 ? 'young' : state.age < 50 ? 'mid' : 'senior');
 const AGE_WORDS = { teen: 'students', young: 'hangout', mid: 'weekend', senior: 'peaceful' };
 const AGE_COPY = { teen: 'parks, museums and zoos', young: 'bridges, viewpoints, old trees, ruins and street art', mid: 'heritage, galleries and nature reserves', senior: 'gardens, ghats and old monuments' };
 
@@ -991,7 +1018,7 @@ function openCity(name, origin) {
   <section class="sec sec-red" data-load="underrated">
     <img loading="lazy" src="img/3.jpg" alt="Painted sign: Why not">
     <div><h2>Underrated</h2>
-      <p class="lead">Age ${esc(state.age || '?')} here, so you get ${AGE_COPY[ageBand()]}.</p>
+      <p class="lead">${state.age ? `Age ${esc(state.age)} here` : 'No age given'}, so you get ${AGE_COPY[ageBand()]}.</p>
       <div id="under">Loading…</div>
       <h3>Rivers, pul, trees, paintings</h3><div id="underTabs"></div>
       <h3>Near here on Wikipedia</h3><div id="nearby">Loading…</div>

@@ -189,9 +189,7 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
 
 /* Ghoomo tiles rock with the pointer and the title floats above the face */
 .g-grid { gap: 18px 14px; padding-bottom: 20px; }
-.g-card { --depth: 7px; border-radius: 15px; transform-style: preserve-3d; transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .14s ease-out, box-shadow .09s; }
-.g-card b { transform: translateZ(26px); }
-.g-card span { transform: translateZ(14px); }
+.g-card { --depth: 7px; border-radius: 15px; transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .14s ease-out, box-shadow .09s; }
 .g-card:active { transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(6px); box-shadow: var(--glow), 0 1px 0 var(--side); }
 .g-red { --face: var(--red); --side: #7d1010; --ink: #fff; }
 .g-amber { --face: var(--amber); --side: #a75c05; --ink: #000; }
@@ -213,14 +211,14 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
   border: 0;
   background: linear-gradient(160deg, #4a4034, #2a241d 50%, #1a1612);
   transform: rotateX(calc(3deg + var(--rx, 0deg))) rotateY(var(--ry, 0deg));
-  transform-style: preserve-3d;
   transition: transform .2s ease-out;
   box-shadow: inset 0 2px 0 #ffffff33, inset 0 -3px 0 #00000080, 0 14px 0 #120f0b, 0 40px 70px #000;
 }
 .tv-screen { box-shadow: inset 0 0 90px #5a2200, inset 0 6px 18px #2b1200, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044; }
 .tv-screen::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(70% 45% at 28% 12%, #ffffff33, transparent 70%); }
-.tv-advisory { border-radius: 6px; box-shadow: 0 5px 0 #000, 0 11px 14px #00000080; transform: rotate(-3deg) translateZ(20px); }
+.tv-advisory { border-radius: 6px; box-shadow: 0 5px 0 #000, 0 11px 14px #00000080; transform: rotate(-3deg); }
 .power { --depth: 8px; border: 0; background: radial-gradient(circle at 36% 28%, #ff8583, var(--red) 52%, #7d1010); box-shadow: inset 0 3px 3px #ffffff4d, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 var(--depth) 0 8px #120f0b, 0 18px 18px 6px #000000a6; transition: transform .1s var(--ease-press), box-shadow .1s; }
+.skip-go { align-self: flex-start; margin-top: .3em; padding: .2em 0; background: none; border: 0; color: #2b1200; text-decoration: underline; font: inherit; min-height: 34px; }
 .power:active { transform: translateY(5px); box-shadow: inset 0 3px 3px #ffffff33, 0 0 0 6px #120f0b, 0 0 0 8px #5a5044, 0 3px 0 8px #120f0b; }
 
 /* Mera Hisaab */
@@ -370,7 +368,7 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
 }
 
 /* Short screens: the TV fits by height, so the power button always stays reachable */
-@media (max-height: 620px) {
+@media (max-height: 620px) and (orientation: landscape) {
   .tv { padding: 10px; overflow: auto; }
   .tv-set { width: min(100%, 150dvh); grid-template-columns: 1fr clamp(92px, 16vw, 130px); padding: 12px; box-shadow: inset 0 2px 0 #ffffff33, 0 8px 0 #120f0b; transform: none; }
   .tv-screen { aspect-ratio: auto; height: calc(100dvh - 58px); padding: 8px 18px; font-size: clamp(14px, 4.4dvh, 22px); }
@@ -379,5 +377,15 @@ input[type='range']:active::-webkit-slider-thumb { cursor: grabbing; }
   #tvAge label { font-size: clamp(24px, 9dvh, 48px); }
   #tvAge input { font-size: clamp(26px, 10dvh, 48px); margin: .1rem 0; }
   .tv-controls { flex-direction: column; }
+  #tvAge p { display: none; }
   .power { width: clamp(68px, 22dvh, 100px); font-size: .9rem; }
+}
+
+/* Small upright phones: the age form needs a taller screen than the 5:4 shape gives */
+@media (max-width: 620px) and (orientation: portrait) {
+  .tv-screen { aspect-ratio: auto; min-height: clamp(270px, 76vw, 340px); padding: 12px 20px; }
+  #tvAge p { display: none; }
+  #tvAge label { font-size: clamp(26px, 8vw, 40px); }
+  #tvAge input { font-size: clamp(30px, 10vw, 48px); margin: .15rem 0; }
+  .soft-go, .skip-go { min-height: 40px; }
 }
