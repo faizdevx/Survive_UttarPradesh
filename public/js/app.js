@@ -2,6 +2,9 @@ import { initGhoomo } from './ghoomo.js';
 import { initTilt, initGrip } from './feel.js';
 import { loadMplads, loadTenders, rupeesCr } from './hisaab.js';
 import { seasonNow, loadKohra, headline, cityLine } from './kohra.js';
+import { loadCards, reportCard, mpLine, cardUrl } from './report.js';
+import { initPredict } from './predict.js';
+import { initLang, missed } from './i18n.js';
 import { ELECTION, PARTIES, NETA_PARTY, HELPLINES, LAW_CATS, AREA_CATS, UNDER_TABS, SUBS, SEARCH_NAME, OLD_NAMES, CRAFT, ODOP, MUSIC, HISTORY, BLOCS, RTO, PROJECTS, MONEY_LINKS, PAPERS } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -167,6 +170,7 @@ function fitUp(animate = true) {
 function openAbout() {
   const box = $('#dossier');
   ghoomo.leave();
+  predict.leave();
   box.hidden = false;
   box.classList.remove('peek');
   box.classList.add('sheet');
@@ -182,6 +186,27 @@ function openAbout() {
   $('#closeBtn').addEventListener('click', closeDossier);
   go('about');
 }
+// Sends a picture with the words where the phone allows it, the link alone where it does not
+async function shareOut({ title, text, url, file }) {
+  try {
+    if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text} ${url}` }); return 'shared'; }
+    if (navigator.share) { await navigator.share({ title, text, url }); return 'shared'; }
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    return 'copied';
+  } catch { return 'closed'; }
+}
+// Shared links use a real path, so chat apps can show that page's own card
+async function sharePage(btn) {
+  const [kind, value] = location.hash.slice(1).split('/').map(decodeURIComponent);
+  const seat = kind === 'seat' && chunav.seats?.[value];
+  const text = seat ? `Report card of ${seat.mla.name}, MLA for ${seat.name}. Apne vidhayak ka report card dekho:`
+    : kind === 'city' ? `${value} on one map: MLAs, MP, food, news and fog.`
+    : 'Survive Uttar Pradesh: your MLA, your district, your fog. On one map.';
+  const blob = await fetch(seat || kind === 'city' ? cardUrl(kind, value) : 'img/og.jpg').then((r) => (r.ok ? r.blob() : null)).catch(() => null);
+  const file = blob && new File([blob], 'survive-uttar-pradesh.jpg', { type: 'image/jpeg' });
+  if (await shareOut({ title: document.title, text, url: `${location.origin}/${location.hash.slice(1)}`, file }) === 'copied') btn.textContent = 'Link copied';
+}
+
 async function goHome() {
   if (chunav.on) await setChunav(false);
   closeDossier();
@@ -233,25 +258,8 @@ async function initMap() {
     if (!chunav.on) await setChunav(true);
     $('#seatQ').focus();
   });
-  $('#shareBtn').addEventListener('click', async () => {
-    // Shared links use a real path, so chat apps can show a preview of that page
-    const url = `${location.origin}/${location.hash.slice(1)}`;
-    try {
-      if (navigator.share) await navigator.share({ title: document.title, url });
-      else { await navigator.clipboard.writeText(url); $('#shareBtn').textContent = 'Link copied'; }
-    } catch { /* The person closed the share sheet */ }
-  });
-  const setLang = (hi) => {
-    document.querySelectorAll('[data-hi]').forEach((el) => {
-      el.dataset.en ??= el.textContent;
-      el.textContent = hi ? el.dataset.hi : el.dataset.en;
-    });
-    document.documentElement.lang = hi ? 'hi' : 'en';
-    $('#langBtn').textContent = hi ? 'English' : 'हिंदी';
-    store.set('lang', hi ? 'hi' : 'en');
-  };
-  $('#langBtn').addEventListener('click', () => setLang(document.documentElement.lang !== 'hi'));
-  if ((store.get('lang') || navigator.language).startsWith('hi')) setLang(true);
+  $('#shareBtn').addEventListener('click', (e) => sharePage(e.target));
+  $('#predictBtn').addEventListener('click', () => predict.open());
   $('#dossier').addEventListener('click', (e) => {
     if (!e.target.closest('[data-set-age]')) return;
     const age = Number(prompt('Umar kitni hai?'));
@@ -425,6 +433,7 @@ async function route() {
     if (chunav.seats[value] && chunav.current !== Number(value)) openSeat(Number(value));
   } else if (kind === 'ghoomo') ghoomo.open(value);
   else if (kind === 'about') openAbout();
+  else if (kind === 'predict') { if (!predict.on()) predict.open(value); }
   else if (!$('#dossier').hidden || document.body.classList.contains('samay-on')) closeDossier();
 }
 async function places(keys, radius) {
@@ -657,6 +666,7 @@ const loader = (fn) => ({ fn, done: false });
 
 function closeDossier() {
   ghoomo.leave();
+  predict.leave();
   $('#dossier').hidden = true;
   $('#dossier').classList.remove('peek');
   state.current = null;
@@ -711,8 +721,10 @@ function chunavClock() {
 
 function seatStyle(f) {
   const s = chunav.seats[f.properties.no];
-  const fill = chunav.view === 'party' ? PARTIES[s.party]?.color || '#777' : CLOSE_BINS.find((b) => s.margin < b.max).color;
-  const on = chunav.current === s.no;
+  const guess = predict.on() ? predict.partyOf(s.no) : null;
+  const fill = guess ? PARTIES[guess]?.color || '#8a8a8a' : chunav.view === 'party' ? PARTIES[s.party]?.color || '#777' : CLOSE_BINS.find((b) => s.margin < b.max).color;
+  // In a prediction, the seats the person changed stand out
+  const on = guess ? guess !== s.party : chunav.current === s.no;
   const near = state.map.getZoom() >= 11;
   return { fillColor: fill, fillOpacity: near ? 0.12 : on ? 0.85 : 0.6, color: on ? '#fff' : '#000', weight: on ? 3 : 0.6 };
 }
@@ -736,7 +748,7 @@ async function loadChunav() {
       const s = seats[f.properties.no];
       layer.bindTooltip(() => `<b>${esc(s.name)}</b>${esc(s.mla.name)}<br>2022: ${esc(PARTIES[s.party]?.name || s.party)} by ${s.margin.toLocaleString('en-IN')} votes`, { sticky: true, className: 'dist-tip' });
       // Rings inside a seat are stored as polygons, so the click goes by position
-      layer.on('click', (e) => { const no = seatAt(e.latlng.lat, e.latlng.lng); if (no) openSeat(no); });
+      layer.on('click', (e) => { const no = seatAt(e.latlng.lat, e.latlng.lng); if (no && predict.on()) predict.pick(no); else if (no) openSeat(no); });
     },
   });
   state.map.on('zoomend', () => { if (chunav.on) chunav.layer.setStyle(seatStyle); });
@@ -830,6 +842,7 @@ function seatFromGps() {
 
 function openSeat(no, place) {
   const s = chunav.seats[no];
+  predict.leave();
   go(`seat/${no}`);
   chunav.current = no;
   $('#dossier').classList.remove('peek', 'sheet');
@@ -871,10 +884,8 @@ function openSeat(no, place) {
 
   <section class="sec sec-black">
     <img loading="lazy" src="img/10.jpg" alt="Poster: Aapna kya lena dena">
-    <div><h2>Your MLA now</h2>
-      <h3><a href="${mynetaUrl(m.id)}" target="_blank" rel="noopener">${esc(m.name)}</a></h3>
-      <p class="lead">${m.vacant ? 'Wikipedia lists a bye-election as still to come for this seat.' : `${esc(pName(m.party))}${m.bye ? ', won a bye-election after 2022' : ''}. ${netaFacts(m)}.`}</p>
-      <p class="muted">Their own 2022 affidavit, collected by ADR on MyNeta. Declared cases are not convictions.</p>
+    <div><h2>Vidhayak report card</h2>
+      <div id="reportCard"><h3>${esc(m.name)}</h3><p class="lead">Loading the report card…</p></div>
     </div>
   </section>
 
@@ -916,6 +927,17 @@ function openSeat(no, place) {
   addJumpNav(box);
   box.focus({ preventScroll: true });
   $('#seatCity').addEventListener('click', () => { setChunav(false).then(() => openCity(s.district)); });
+  loadCards().then((cards) => {
+    if (chunav.current !== no) return;
+    $('#reportCard').innerHTML = reportCard({ s, seats: chunav.seats, extra: cards.mlas[m.id], esc, pName, mynetaUrl });
+    // Not every affidavit carried a photo
+    $('.rc-photo')?.addEventListener('error', (e) => e.target.remove());
+    $('#rcShare')?.addEventListener('click', (e) => sharePage(e.target));
+    loadMplads().then((data) => {
+      const mp = data.seats.find((x) => x.house === 'Lok Sabha' && x.seat.toUpperCase() === s.lokSabha.toUpperCase());
+      if ($('#rcMp')) $('#rcMp').innerHTML = mpLine(mp, esc);
+    }).catch(() => {});
+  });
   api('candidates', {}).then((c) => {
     $('#cands').innerHTML = c.ready
       ? `<p class="lead"><a href="${safeUrl(c.url)}" target="_blank" rel="noopener">Candidate affidavits are up on MyNeta</a>. Compare their assets with the 2022 figures here.</p>`
@@ -1302,6 +1324,12 @@ function openCity(name, origin) {
   box.querySelectorAll('[data-load]').forEach((s) => state.io.observe(s));
 }
 
+const predict = initPredict({
+  $, esc, store, state, chunav, shareOut,
+  closeDossier: () => closeDossier(),
+  enterChunav: async () => { ghoomo.leave(); if (!chunav.on) await setChunav(true); },
+  restyle: () => chunav.layer?.setStyle(seatStyle),
+});
 const ghoomo = initGhoomo({
   $, esc, state, store, api, dirLink, pinIcon, go, keepMapClear, showStatePins, style, openCity,
   closeDossier: () => closeDossier(),
@@ -1313,6 +1341,9 @@ initTilt();
 initGrip({ store });
 // A shared link arrives as a real path. Inside the page, addresses stay as hashes.
 if (location.pathname !== '/') history.replaceState(null, '', `/#${location.pathname.slice(1)}`);
+initLang(store);
+// For whoever maintains the Hindi list: the lines still in English on the pages opened so far
+window.missedHindi = () => [...missed];
 intro();
 initMap();
 initChunav();

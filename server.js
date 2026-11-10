@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fetchMplads, fetchTenders } from './scripts/mplads-lib.mjs';
+import { decode as decodePicks, tally } from './public/js/predict.js';
 
 const PORT = process.env.PORT || 4173;
 const ROOT = path.join(import.meta.dirname, 'public');
@@ -598,13 +599,16 @@ const server = http.createServer(async (req, res) => {
     return res.end(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map((p) => `<url><loc>${site}/${p}</loc></url>`).join('')}</urlset>`);
   }
   // Every page is the same app. Each address gets its own title, so chat previews and search results name the place.
-  const page = rel === '/index.html' ? ['', ''] : rel.match(/^\/(city|seat|ghoomo|about)(?:\/([^/]+))?$/)?.slice(1);
+  const page = rel === '/index.html' ? ['', ''] : rel.match(/^\/(city|seat|ghoomo|about|predict)(?:\/([^/]+))?$/)?.slice(1);
   if (page) {
     const [kind, value] = page;
     const seat = kind === 'seat' ? SEATS[value] : null;
-    const title = kind === 'city' && Object.hasOwn(DISTRICTS, value) ? `${value}: MLAs, MP, food, news and fog`
-      : seat ? `${seat.name} seat: 2022 winner ${seat.winner} (${seat.party})`
+    const city = kind === 'city' && Object.hasOwn(DISTRICTS, value);
+    const title = city ? `${value}: MLAs, MP, food, news and fog`
+      : seat ? `Report card: ${seat.mla.name}, MLA for ${seat.name}`
+      : kind === 'predict' ? `My UP 2027 prediction: ${tally(decodePicks(/^[0-9a-z]*$/.test(value || '') ? value : '', SEATS)).slice(0, 3).map(([p, n]) => `${p === 'OTH' ? 'Others' : p} ${n}`).join(', ')}`
       : 'Your MLA, your district, your fog. On one map.';
+    const card = seat ? `card/seat-${seat.no}` : city ? `card/city-${value.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : 'og';
     // shortcut: visits go to the server log only. Add real analytics when traffic matters.
     console.log('visit', rel, req.headers.referer || '');
     const tags = `<title>${title} | Survive Uttar Pradesh</title>
@@ -612,7 +616,7 @@ const server = http.createServer(async (req, res) => {
 <meta property="og:site_name" content="Survive Uttar Pradesh">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="A live map of Uttar Pradesh: who holds which seat, where the money goes, and where to get chai.">
-<meta property="og:image" content="${site}/img/og.jpg">
+<meta property="og:image" content="${site}/img/${card}.jpg">
 <meta property="og:url" content="${site}${rel === '/index.html' ? '/' : encodeURI(rel)}">
 <meta name="twitter:card" content="summary_large_image">`;
     res.writeHead(200, { 'Content-Type': TYPES['.html'], 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' });

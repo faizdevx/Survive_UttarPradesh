@@ -32,7 +32,7 @@
       <div class="phone-keys"><span>Menu</span><span>ArabianTune</span><span>Back</span></div>
     </div>
     <div class="tv-controls">
-      <button id="powerBtn" class="power" data-hi="चालू करें">Turn on</button>
+      <button id="powerBtn" class="power">Turn on</button>
     </div>
   </div>
 </div>
@@ -42,26 +42,26 @@
     <img class="sil sil-taj" src="img/poster/taj.svg" alt="">
     <img class="sil sil-palace" src="img/poster/palace.svg" alt="">
     <nav class="poster-nav nav-main" aria-label="Main">
-      <button id="navHome" class="nav-home" type="button" data-hi="होम">Home</button>
-      <button id="navExplore" class="nav-wide" type="button" data-hi="घूमो">Explore</button>
-      <button id="navData" class="nav-wide" type="button" data-hi="हिसाब">Data</button>
-      <button id="navAbout" type="button" data-hi="जानकारी">About</button>
+      <button id="navHome" class="nav-home" type="button">Home</button>
+      <button id="navExplore" class="nav-wide" type="button">Explore</button>
+      <button id="navData" class="nav-wide" type="button">Data</button>
+      <button id="navAbout" type="button">About</button>
     </nav>
     <button id="navCrest" class="crest" type="button" aria-label="Survive Uttar Pradesh, back to the full map">
       <svg viewBox="0 0 320 132" preserveAspectRatio="none" aria-hidden="true"><path d="M6 8H314V76C314 92 292 92 278 102C252 118 196 104 160 128C124 104 68 118 42 102C28 92 6 92 6 76Z" fill="#7a0f12" stroke="#e9b949" stroke-width="4"/><path d="M15 16H305V74C305 84 286 84 273 94C248 108 194 95 160 117C126 95 72 108 47 94C34 84 15 84 15 74Z" fill="none" stroke="#e9b949" stroke-width="1.4"/></svg>
-      <span><small>Survive</small><b data-hi="उत्तर प्रदेश">Uttar Pradesh</b></span>
+      <span><small>Survive</small><b>Uttar Pradesh</b></span>
     </button>
     <div class="poster-nav poster-right">
-      <button id="langBtn" type="button" lang="hi">हिंदी</button>
-      <button id="shareBtn" type="button" data-hi="शेयर करें">Share</button>
+      <button id="langBtn" type="button" data-keep>हिंदी</button>
+      <button id="shareBtn" type="button">Share</button>
     </div>
-    <button id="topPick" class="top-pick" type="button" data-hi="अपना विधायक खोजें">Find my MLA</button>
+    <button id="topPick" class="top-pick" type="button">Find my MLA</button>
   </header>
 
   <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
 
   <div class="poster-art" aria-hidden="true">
-    <p class="poster-note" data-hi="उत्तर प्रदेश की सीधी-सच्ची गाइड, आंकड़ों के साथ।">A data-powered, no-nonsense guide to Uttar Pradesh.</p>
+    <p class="poster-note">A data-powered, no-nonsense guide to Uttar Pradesh.</p>
     <img class="poster-stamp" src="img/poster/stamp.webp" alt="">
     <img class="poster-focus" src="img/poster/focus.webp" alt="">
   </div>
@@ -82,11 +82,12 @@
   <section class="rola" id="rola">
     <div class="top-btns">
       <button id="kohraBtn" class="kohra-btn" type="button"><b id="kohraName">Kohra meter</b><span id="kohraLine">Checking the next 48 hours…</span></button>
-      <button id="hisaabBtn" class="hisaab-btn" type="button"><b data-hi="मेरा हिसाब">Mera Hisaab</b><span data-hi="यूपी का पैसा कहां जाता है, सबूत के साथ">Where UP's money goes, with proof</span></button>
-      <button id="ghoomoBtn" class="ghoomo-btn" type="button"><b data-hi="घूमो यूपी">Ghoomo UP</b><span data-hi="हटके चीज़ें, 10 तरीके">Niche stuff, 10 ways</span></button>
-      <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b data-hi="चुनाव 2027">Chunav 2027</b><span id="chunavClock"></span></button>
+      <button id="hisaabBtn" class="hisaab-btn" type="button"><b>Mera Hisaab</b><span>Where UP's money goes, with proof</span></button>
+      <button id="ghoomoBtn" class="ghoomo-btn" type="button"><b>Ghoomo UP</b><span>Niche stuff, 10 ways</span></button>
+      <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
     </div>
     <div id="chunavPanel" class="chunav-panel" hidden>
+      <button id="predictBtn" class="action predict-btn" type="button">Predict 2027: make your map</button>
       <form id="seatForm" class="seat-form">
         <label for="seatQ">Your area, find your seat</label>
         <div><input id="seatQ" autocomplete="off" placeholder="Hazratganj, Lucknow"><button type="submit">Find</button></div>
@@ -104,7 +105,7 @@
       <p class="note">Boundaries are approximate. Confirm your seat on the Election Commission's voter search.</p>
     </div>
     <div id="rolaPanel">
-    <h2><button id="rolaToggle" class="rola-toggle" type="button" aria-expanded="true" aria-controls="rolaBody" data-hi="रौला किसका?">Rola kiska?</button></h2>
+    <h2><button id="rolaToggle" class="rola-toggle" type="button" aria-expanded="true" aria-controls="rolaBody">Rola kiska?</button></h2>
     <div id="rolaBody">
     <div class="switch" role="radiogroup" aria-label="Map layer">
       <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
@@ -130,7 +131,7 @@
   </section>
 
   <div class="find">
-    <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span data-hi="मेरे पास">Near me</span></button>
+    <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span>Near me</span></button>
     <select id="districtPick" aria-label="Choose a district"><option value="">Pick a district</option></select>
     <p id="findMsg" class="note" role="status"></p>
   </div>
