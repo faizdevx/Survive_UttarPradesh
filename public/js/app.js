@@ -61,30 +61,11 @@ function intro() {
   };
 
   let busy = false;
-  const askedAge = () => !$('#tvAge').hidden;
-  const enter = async (ms) => {
-    busy = true;
-    await burst(ms);
-    shutDown();
-  };
   const power = async () => {
     if (busy) return;
-    // On the age screen the big button moves things on as well, so nobody gets stuck there
-    if (askedAge()) {
-      if ($('#ageInput').value && !$('#ageInput').checkValidity()) { $('#tvAge').reportValidity(); return; }
-      const age = Number($('#ageInput').value);
-      if (age) { state.age = age; store.set('age', age); }
-      enter(300);
-      return;
-    }
     busy = true;
     await burst(450);
-    busy = false;
-    if (state.age) return shutDown();
-    $('#tvTitle').hidden = true;
-    $('#tvAge').hidden = false;
-    $('#powerBtn').textContent = 'Open map';
-    if (matchMedia('(hover: hover)').matches) $('#ageInput').focus();
+    shutDown();
   };
   // Counts any press that began on the button, even if the release lands just beside it
   let pressed = false;
@@ -93,14 +74,6 @@ function intro() {
     const on = e.target.closest('#powerBtn');
     if (on || pressed) power();
     pressed = false;
-  });
-  $('#ageSkip').addEventListener('click', () => { if (!busy) enter(300); });
-  $('#tvAge').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (busy) return;
-    state.age = Number($('#ageInput').value);
-    store.set('age', state.age);
-    enter(300);
   });
 }
 
@@ -256,10 +229,33 @@ async function initMap() {
   $('#navExplore').addEventListener('click', () => ghoomo.open('hub'));
   $('#navData').addEventListener('click', () => ghoomo.open('hisaab'));
   $('#navAbout').addEventListener('click', openAbout);
-  $('#topPick').addEventListener('click', () => {
-    const pick = $('#districtPick');
-    pick.focus();
-    try { pick.showPicker(); } catch { /* Older browsers: focus is enough */ }
+  $('#topPick').addEventListener('click', async () => {
+    if (!chunav.on) await setChunav(true);
+    $('#seatQ').focus();
+  });
+  $('#shareBtn').addEventListener('click', async () => {
+    // Shared links use a real path, so chat apps can show a preview of that page
+    const url = `${location.origin}/${location.hash.slice(1)}`;
+    try {
+      if (navigator.share) await navigator.share({ title: document.title, url });
+      else { await navigator.clipboard.writeText(url); $('#shareBtn').textContent = 'Link copied'; }
+    } catch { /* The person closed the share sheet */ }
+  });
+  const setLang = (hi) => {
+    document.querySelectorAll('[data-hi]').forEach((el) => {
+      el.dataset.en ??= el.textContent;
+      el.textContent = hi ? el.dataset.hi : el.dataset.en;
+    });
+    document.documentElement.lang = hi ? 'hi' : 'en';
+    $('#langBtn').textContent = hi ? 'English' : 'हिंदी';
+    store.set('lang', hi ? 'hi' : 'en');
+  };
+  $('#langBtn').addEventListener('click', () => setLang(document.documentElement.lang !== 'hi'));
+  if ((store.get('lang') || navigator.language).startsWith('hi')) setLang(true);
+  $('#dossier').addEventListener('click', (e) => {
+    if (!e.target.closest('[data-set-age]')) return;
+    const age = Number(prompt('Umar kitni hai?'));
+    if (age >= 5 && age <= 110) { state.age = age; store.set('age', age); openCity(state.current); }
   });
   $('#districtPick').insertAdjacentHTML('beforeend', Object.keys(districts).sort().map((n) => `<option>${esc(n)}</option>`).join(''));
   $('#districtPick').addEventListener('change', (e) => { if (e.target.value) openCity(e.target.value); });
@@ -1084,7 +1080,7 @@ function openCity(name, origin) {
   <section class="sec sec-red" data-load="underrated">
     <img loading="lazy" src="img/3.jpg" alt="Painted sign: Why not">
     <div><h2>Underrated</h2>
-      <p class="lead">${state.age ? `Age ${esc(state.age)} here` : 'No age given'}, so you get ${AGE_COPY[ageBand()]}.</p>
+      <p class="lead">${state.age ? `Age ${esc(state.age)} here` : 'No age given'}, so you get ${AGE_COPY[ageBand()]}. <button class="link-btn" type="button" data-set-age>Set my age</button></p>
       <div id="under">Loading…</div>
       <h3>Rivers, pul, trees, paintings</h3><div id="underTabs"></div>
       <h3>Near here on Wikipedia</h3><div id="nearby">Loading…</div>
@@ -1315,6 +1311,8 @@ const ghoomo = initGhoomo({
 
 initTilt();
 initGrip({ store });
+// A shared link arrives as a real path. Inside the page, addresses stay as hashes.
+if (location.pathname !== '/') history.replaceState(null, '', `/#${location.pathname.slice(1)}`);
 intro();
 initMap();
 initChunav();

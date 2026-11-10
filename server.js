@@ -539,7 +539,8 @@ const API = { kohraobs, samayhere, tenders: fetchTenders, mplads, kohra, reddit,
 
 // Each visitor gets a fair share of the calls this server makes to free public services
 const HITS = new Map();
-const LIMIT_PER_MINUTE = 150;
+// shortcut: mobile carriers put many people behind one IP, so this is loose. Tighten if someone abuses it.
+const LIMIT_PER_MINUTE = 600;
 function overLimit(req) {
   const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   const now = Date.now();
@@ -553,6 +554,10 @@ function overLimit(req) {
   hit.n += 1;
   return hit.n > LIMIT_PER_MINUTE;
 }
+
+const INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const DISTRICTS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/districts.json'), 'utf8'));
+const SEATS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/seats.json'), 'utf8'));
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -577,11 +582,41 @@ const server = http.createServer(async (req, res) => {
     try {
       const params = Object.fromEntries(url.searchParams);
       const value = await cached(`${route[1]}:${url.search}`, () => fn(params), TTLS[route[1]]);
+      // These two are polled while they build, so the browser must not keep an old answer
+      if (route[1] !== 'mplads' && route[1] !== 'candidates') res.setHeader('Cache-Control', 'public, max-age=120');
       return res.end(JSON.stringify(value));
     } catch (err) {
       res.writeHead(502);
       return res.end(JSON.stringify({ error: err.message }));
     }
+  }
+  const site = `https://${String(req.headers.host).replace(/[^\w.:-]/g, '')}`;
+  if (rel === '/robots.txt') { res.setHeader('Content-Type', 'text/plain'); return res.end(`User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`); }
+  if (rel === '/sitemap.xml') {
+    const pages = ['', ...Object.keys(DISTRICTS).map((n) => `city/${encodeURIComponent(n)}`), ...Object.keys(SEATS).map((n) => `seat/${n}`)];
+    res.setHeader('Content-Type', 'application/xml');
+    return res.end(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map((p) => `<url><loc>${site}/${p}</loc></url>`).join('')}</urlset>`);
+  }
+  // Every page is the same app. Each address gets its own title, so chat previews and search results name the place.
+  const page = rel === '/index.html' ? ['', ''] : rel.match(/^\/(city|seat|ghoomo|about)(?:\/([^/]+))?$/)?.slice(1);
+  if (page) {
+    const [kind, value] = page;
+    const seat = kind === 'seat' ? SEATS[value] : null;
+    const title = kind === 'city' && Object.hasOwn(DISTRICTS, value) ? `${value}: MLAs, MP, food, news and fog`
+      : seat ? `${seat.name} seat: 2022 winner ${seat.winner} (${seat.party})`
+      : 'Your MLA, your district, your fog. On one map.';
+    // shortcut: visits go to the server log only. Add real analytics when traffic matters.
+    console.log('visit', rel, req.headers.referer || '');
+    const tags = `<title>${title} | Survive Uttar Pradesh</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Survive Uttar Pradesh">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="A live map of Uttar Pradesh: who holds which seat, where the money goes, and where to get chai.">
+<meta property="og:image" content="${site}/img/og.jpg">
+<meta property="og:url" content="${site}${rel === '/index.html' ? '/' : encodeURI(rel)}">
+<meta name="twitter:card" content="summary_large_image">`;
+    res.writeHead(200, { 'Content-Type': TYPES['.html'], 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' });
+    return res.end(zlib.gzipSync(INDEX.replace('<title>Survive Uttar Pradesh</title>', tags)));
   }
   const file = path.join(ROOT, rel);
   if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end(); }
@@ -589,7 +624,7 @@ const server = http.createServer(async (req, res) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     const ext = path.extname(file);
     const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', Vary: 'Accept-Encoding' };
-    if (ext === '.jpg' || ext === '.webp') headers['Cache-Control'] = 'public, max-age=86400';
+    headers['Cache-Control'] = ext === '.jpg' || ext === '.webp' || ext === '.png' ? 'public, max-age=86400' : 'public, max-age=300';
     // Text compresses well, which matters for the seat map on a phone
     if (ext !== '.jpg' && ext !== '.png' && ext !== '.webp' && /gzip/.test(req.headers['accept-encoding'] || '')) {
       headers['Content-Encoding'] = 'gzip';
@@ -604,3 +639,8 @@ const server = http.createServer(async (req, res) => {
 // One failed background job should never take the site down
 process.on('unhandledRejection', (err) => console.error('Unhandled:', err));
 server.listen(PORT, () => console.log(`Survive Uttar Pradesh on http://localhost:${PORT}`));
+
+// The fog forecast takes about 30 seconds to build, so it is kept ready and no visitor waits for it
+const warmKohra = () => cached('kohra:', () => kohra({}), 0).catch((err) => console.error('Kohra warm-up:', err.message));
+warmKohra();
+setInterval(warmKohra, 50 * 60 * 1000);
