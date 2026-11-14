@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Survive Uttar Pradesh</title>
-<meta name="description" content="Aapke aas-paas bijli, paani, network, sadak aur jaam ka haal. Ek tap mein batao, dekho kitne log pareshan hain.">
+<meta name="description" content="Power, water, network, roads and traffic around you in Uttar Pradesh. Report in one tap and see how many people nearby have the same problem.">
 <meta name="theme-color" content="#7c1113">
 <link rel="icon" href="/img/icon-192.png">
 <link rel="manifest" href="/manifest.json">
@@ -14,47 +14,47 @@
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="/">Survive <b>उत्तर प्रदेश</b></a>
-  <button id="placeBtn" class="place" type="button">📍 <span id="placeName">जगह चुनें</span></button>
+  <a class="brand" href="/">Survive <b>Uttar Pradesh</b></a>
+  <button id="placeBtn" class="place" type="button">📍 <span id="placeName">Pick a place</span></button>
 </header>
 
 <main>
   <section id="start" class="start">
-    <p class="start-big">आपके आस-पास क्या हाल है?</p>
-    <p class="start-small">बिजली, पानी, नेटवर्क, सड़क। एक बटन दबाओ, देखो कितने लोग परेशान हैं।</p>
-    <button id="useGps" class="go" type="button">📍 मेरी जगह बताओ</button>
-    <label class="pick">या ज़िला चुनें
-      <select id="districtPick"><option value="">ज़िला</option></select>
+    <p class="start-big">What is it like around you?</p>
+    <p class="start-small">Power, water, network, roads. Tap once and see how many people nearby have the same problem.</p>
+    <button id="useGps" class="go" type="button">📍 Use my location</button>
+    <label class="pick">Or pick your district
+      <select id="districtPick"><option value="">District</option></select>
     </label>
-    <p class="note">आपकी जगह सिर्फ गिनती के लिए है। नाम, नंबर, कुछ नहीं मांगते।</p>
+    <p class="note">Your location is used only for the counts. No name, no phone number, no sign-up.</p>
   </section>
 
   <section id="home" hidden>
     <div class="tiles" id="tiles"></div>
-    <a class="sos" href="tel:112">📞 खतरे में हैं? <b>112</b> पर कॉल करें</a>
+    <a class="sos" href="tel:112">📞 In danger? Call <b>112</b></a>
 
     <section class="block" id="mlaBlock" hidden></section>
 
     <section class="block">
-      <h2>📸 आस-पास की शिकायतें</h2>
+      <h2>📸 Complaints near you</h2>
       <div id="cases" class="cases"></div>
     </section>
 
     <section class="block">
-      <h2>🗺️ आज पूरे UP में</h2>
+      <h2>🗺️ Across UP right now</h2>
       <div id="stateNow" class="state"></div>
     </section>
 
     <footer class="foot">
-      <a href="/map">पुराना नक्शा: विधायक, ज़िले, चुनाव →</a>
-      <p>गिनती पास के लोगों के एक-एक टैप से बनती है। हर टैप कुछ घंटों में अपने-आप हट जाता है। जगह 100 मीटर तक धुंधली रखी जाती है।</p>
+      <a href="/map">Full map: MLAs, districts, elections →</a>
+      <p>Counts come from taps by people nearby. Each tap expires on its own within hours. Locations are blurred by about 100 metres.</p>
     </footer>
   </section>
 </main>
 
 <div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
   <div class="sheet-card">
-    <button id="sheetClose" class="x" type="button" aria-label="बंद करें">✕</button>
+    <button id="sheetClose" class="x" type="button" aria-label="Close">✕</button>
     <div id="sheetBody"></div>
   </div>
 </div>

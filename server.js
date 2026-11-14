@@ -606,15 +606,15 @@ const server = http.createServer(async (req, res) => {
   const home = rel === '/index.html' ? [] : rel.match(/^\/case\/([0-9a-f]{12})$/)?.slice(1);
   if (home) {
     const c = home[0] && pulse.getCase(home[0]);
-    const words = { gaddha: 'गड्ढा', naali: 'नाली', khamba: 'खंभे की बत्ती', kooda: 'कूड़ा' };
-    const title = c ? `${words[c.kind]}, ${c.seatName} (${c.district}): ${c.confirms} लोग परेशान` : 'आपके आस-पास: बिजली, पानी, नेटवर्क, सड़क';
+    const words = { gaddha: 'Pothole', naali: 'Blocked drain', khamba: 'Streetlight out', kooda: 'Garbage' };
+    const title = c ? `${words[c.kind]}, ${c.seatName} (${c.district}): ${c.confirms} ${c.confirms === 1 ? 'person' : 'people'} affected` : 'Around you: power, water, network, roads';
     const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
     console.log('visit', rel, req.headers.referer || '');
     const tags = `<title>${esc(title)} | Survive Uttar Pradesh</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Survive Uttar Pradesh">
 <meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="एक टैप में बताओ, देखो आपके पास कितने लोग परेशान हैं।">
+<meta property="og:description" content="Report in one tap and see how many people near you have the same problem.">
 <meta property="og:image" content="${site}${c ? c.photo : '/img/og.jpg'}">
 <meta property="og:url" content="${site}${c ? `/case/${c.id}` : '/'}">
 <meta name="twitter:card" content="summary_large_image">`;
