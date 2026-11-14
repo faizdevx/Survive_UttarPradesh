@@ -24,11 +24,12 @@ const TOPICS = {
 const KINDS = { gaddha: '🕳️ Pothole', naali: '🌊 Blocked drain, waterlogging', khamba: '💡 Streetlight not working', kooda: '🗑️ Garbage' };
 const PARTY = { SP: 'Samajwadi Party', INC: 'Congress', 'Apna Dal (Soneylal)': 'Apna Dal (S)', 'Suheldev Bharatiya Samaj Party': 'SBSP', 'Nirbal Indian Shoshit Hamara Aam Dal': 'NISHAD Party', 'Jansatta Dal Loktantrik': 'Jansatta Dal (L)' };
 
-const me = { lat: null, lng: null, data: null, timer: null };
+// gps is true only when the place on screen is where the phone is. A picked district is look-only.
+const me = { lat: null, lng: null, gps: false, fix: null, data: null, timer: null };
 const sheet = $('#sheet');
 
-async function call(url, body) {
-  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, device, lat: me.lat, lng: me.lng }) } : undefined);
+async function call(url, body, at = me) {
+  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, device, lat: at.lat, lng: at.lng, acc: at.acc, gps: Boolean(at.acc) }) } : undefined);
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Network problem. Try again.');
   return j;
@@ -53,10 +54,26 @@ const placeLine = () => (place() ? `${place().seatName}, ${place().district}` : 
 const wa = (text) => `https://wa.me/?text=${encodeURIComponent(text)}`;
 
 // Location
-async function setPlace(lat, lng) {
+const MAX_ACC = 1000;
+const fixNow = () => new Promise((done, fail) => {
+  if (!navigator.geolocation) { fail(new Error('This phone cannot share its location.')); return; }
+  navigator.geolocation.getCurrentPosition(
+    (p) => done({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy), at: Date.now() }),
+    (e) => fail(new Error(e.code === 1 ? 'Location is blocked. Allow location for this site in your browser settings.' : 'Could not find your location. Step outside and try again.')),
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
+  );
+});
+// Every report is sent from where the phone is right now, so nobody can report for a place they are not in
+async function here() {
+  if (!me.fix || Date.now() - me.fix.at > 2 * 60000) me.fix = await fixNow();
+  if (me.fix.acc > MAX_ACC) throw new Error(`Your location is too rough (about ${me.fix.acc} m). Turn on GPS, step outside and try again.`);
+  return me.fix;
+}
+async function setPlace(lat, lng, gps = false) {
   me.lat = lat;
   me.lng = lng;
-  store.set('where', JSON.stringify([lat, lng]));
+  me.gps = gps;
+  store.set('where', JSON.stringify([lat, lng, gps]));
   await refresh();
   $('#start').hidden = true;
   $('#home').hidden = false;
@@ -66,11 +83,8 @@ async function setPlace(lat, lng) {
 function gps() {
   const btn = $('#useGps');
   btn.textContent = '📍 Finding you…';
-  navigator.geolocation.getCurrentPosition(
-    (p) => setPlace(p.coords.latitude, p.coords.longitude).catch((err) => { btn.textContent = `📍 ${err.message}`; }),
-    () => { btn.textContent = '📍 Location not found. Pick your district below.'; },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 },
-  );
+  fixNow().then((f) => { me.fix = f; return setPlace(f.lat, f.lng, true); })
+    .catch((err) => { btn.textContent = `📍 ${err.message}`; });
 }
 $('#useGps').addEventListener('click', gps);
 $('#placeBtn').addEventListener('click', () => { $('#home').hidden = true; $('#start').hidden = false; $('#useGps').textContent = '📍 Use my location'; });
@@ -89,6 +103,8 @@ async function refresh() {
   me.data = await call(`/api/p/near?lat=${me.lat}&lng=${me.lng}&device=${device}`);
   if (!me.data.place) throw new Error('This place is not in Uttar Pradesh');
   $('#placeName').textContent = placeLine();
+  $('#viewOnly').hidden = me.gps;
+  $('#viewOnly').innerHTML = `👀 Just looking at ${esc(place().district)}. To report, you must be there. <u>Use my location</u>`;
   paintTiles();
   paintMla();
   paintCases();
@@ -102,24 +118,37 @@ function paintTiles() {
     let line = 'No reports yet. Tell us';
     let cls = '';
     if (key === 'sadak') {
-      line = open ? `${open} open nearby` : 'Send a photo';
+      line = open ? `<b>${open}</b> open nearby` : 'Send a photo';
       cls = open ? 'bad' : '';
     } else if (t[key].bad) {
-      line = `${t[key].bad} report a problem`;
+      line = `<b>${t[key].bad}</b> with a problem`;
       cls = t[key].bad >= t[key].ok ? 'bad' : 'ok';
     } else if (t[key].ok) {
-      line = `${t[key].ok} say all fine`;
+      line = `<b>${t[key].ok}</b> say all fine`;
       cls = 'ok';
     }
     const mine = t[key]?.mine ? `<span class="me">You told</span>` : '';
-    return `<button class="tile ${cls}" data-topic="${key}" type="button">${mine}<span class="em" aria-hidden="true">${x.em}</span><span class="name">${x.name}</span><span class="num">${line}</span></button>`;
+    return `<button class="tile t-${key} ${cls}" data-topic="${key}" type="button">${mine}<span class="em" aria-hidden="true">${x.em}</span><span class="name">${x.name}</span><span class="num">${line}</span></button>`;
   }).join('');
 }
 $('#tiles').addEventListener('click', (e) => {
   const key = e.target.closest('[data-topic]')?.dataset.topic;
+  if (!key) return;
+  if (!me.gps) { needHere(); return; }
   if (key === 'sadak') askCase();
-  else if (key) ask(key);
+  else ask(key);
 });
+$('#viewOnly').addEventListener('click', () => needHere());
+// A picked district can be looked at, but reporting needs the phone's own location
+function needHere() {
+  open(`<p class="q" id="sheetTitle">📍 Report from where you are</p>
+    <p>Reports count only from people standing in the place, so nobody can fake problems for another area.</p>
+    <div class="choices"><button class="choice plain" id="goHere" type="button">📍 Use my location</button></div><p class="err" id="hereErr"></p>`);
+  $('#goHere').addEventListener('click', async () => {
+    $('#goHere').textContent = '📍 Finding you…';
+    try { me.fix = await fixNow(); await setPlace(me.fix.lat, me.fix.lng, true); close(); } catch (err) { $('#hereErr').textContent = err.message; $('#goHere').textContent = '📍 Use my location'; }
+  });
+}
 
 function paintMla() {
   const p = place();
@@ -162,7 +191,9 @@ document.addEventListener('click', async (e) => {
   if (b.dataset.vote === 'flag' && !confirm('Is this photo wrong or private?')) return;
   b.disabled = true;
   try {
-    await call(`/api/p/case/${b.dataset.id}/vote`, { what: b.dataset.vote });
+    // Saying "me too" or "fixed" needs you near the problem. Flagging a bad photo does not.
+    const at = b.dataset.vote === 'flag' ? me : await here();
+    await call(`/api/p/case/${b.dataset.id}/vote`, { what: b.dataset.vote }, at);
     b.textContent = b.dataset.vote === 'flag' ? 'Reported' : '✔️ Done';
     if (me.lat) refresh();
   } catch (err) { b.textContent = err.message; }
@@ -195,7 +226,10 @@ function ask(key, sub) {
   $('#sheetBody').querySelectorAll('[data-bad]').forEach((b) => b.addEventListener('click', async () => {
     b.disabled = true;
     try {
-      me.data = await call('/api/p/tap', { topic: key, bad: b.dataset.bad === '1', sub: b.dataset.sub || sub });
+      const at = await here();
+      me.data = await call('/api/p/tap', { topic: key, bad: b.dataset.bad === '1', sub: b.dataset.sub || sub }, at);
+      me.lat = at.lat;
+      me.lng = at.lng;
       paintTiles();
       result(key, b.dataset.bad === '1', b.dataset.sub || sub);
     } catch (err) { $('#askErr').textContent = err.message; b.disabled = false; }
@@ -265,7 +299,10 @@ $('#camera').addEventListener('change', async (e) => {
     $('#send').disabled = true;
     $('#send').textContent = 'Sending…';
     try {
-      const c = await call('/api/p/case', { kind: me.kind, photo });
+      const at = await here();
+      const c = await call('/api/p/case', { kind: me.kind, photo }, at);
+      me.lat = at.lat;
+      me.lng = at.lng;
       await refresh();
       showCase(c, true);
     } catch (err) { $('#caseErr').textContent = err.message; $('#send').disabled = false; $('#send').textContent = '📤 Send'; }
@@ -288,7 +325,7 @@ function showCase(c, fresh) {
 const shared = location.pathname.match(/^\/case\/([0-9a-f]{12})$/);
 const saved = JSON.parse(store.get('where') || 'null');
 (async () => {
-  if (saved) await setPlace(...saved).catch(() => {});
+  if (saved) await setPlace(saved[0], saved[1], Boolean(saved[2])).catch(() => {});
   if (shared) {
     try { showCase(await call(`/api/p/case/${shared[1]}`)); } catch { open('<p class="err">This complaint no longer exists.</p>'); }
   }

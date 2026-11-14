@@ -9,12 +9,12 @@
 <link rel="icon" href="/img/icon-192.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&family=Rozha+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Mukta:wght@400;600;800&family=Rozha+One&display=swap">
 <link rel="stylesheet" href="/aas.css">
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="/">Survive <b>Uttar Pradesh</b></a>
+  <a class="brand" href="/"><small>SURVIVE</small>Uttar Pradesh</a>
   <button id="placeBtn" class="place" type="button">📍 <span id="placeName">Pick a place</span></button>
 </header>
 
@@ -30,6 +30,7 @@
   </section>
 
   <section id="home" hidden>
+    <button id="viewOnly" class="view-only" type="button" hidden></button>
     <div class="tiles" id="tiles"></div>
     <a class="sos" href="tel:112">📞 In danger? Call <b>112</b></a>
 
@@ -47,8 +48,9 @@
 
     <footer class="foot">
       <a href="/map">Full map: MLAs, districts, elections →</a>
-      <p>Counts come from taps by people nearby. Each tap expires on its own within hours. Locations are blurred by about 100 metres.</p>
+      <p>Counts come from taps by people nearby. You can report only from where you are standing. Each tap expires on its own within hours. Locations are blurred by about 100 metres.</p>
     </footer>
+    <div class="skyline" aria-hidden="true"></div>
   </section>
 </main>
 

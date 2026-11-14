@@ -98,9 +98,14 @@ function allowed(key, max, windowMs) {
   return true;
 }
 
+// Reports must carry a fresh GPS fix from the phone. A picked district has none, so it can look but not report.
+// shortcut: a determined person can fake GPS in the browser. This stops casual reports for other places, not spoofing.
+const MAX_ACC = 1000;
 function check(body) {
   const lat = Number(body.lat);
   const lng = Number(body.lng);
+  const acc = Number(body.acc);
+  if (body.gps !== true || !(acc > 0 && acc <= MAX_ACC)) throw Object.assign(new Error('Reports need your live location. Tap "Use my location" first.'), { status: 403 });
   if (!(lat > 23.8 && lat < 30.5 && lng > 77 && lng < 84.7)) throw Object.assign(new Error('Location is outside Uttar Pradesh'), { status: 400 });
   if (!/^[a-z0-9-]{16,64}$/.test(String(body.device || ''))) throw Object.assign(new Error('Bad device id'), { status: 400 });
   const at = place(lat, lng);
@@ -185,6 +190,11 @@ export function vote(id, body, ip) {
   if (!c) throw Object.assign(new Error('No such case'), { status: 404 });
   if (!/^[a-z0-9-]{16,64}$/.test(String(body.device || ''))) throw Object.assign(new Error('Bad device id'), { status: 400 });
   if (!allowed(`vote:${ip}`, 150, 60 * MIN)) throw Object.assign(new Error('Too many votes from this network. Try in an hour.'), { status: 429 });
+  // Only people near the problem can confirm it or say it is fixed
+  if (body.what !== 'flag') {
+    const { lat, lng } = check(body);
+    if (km(c, { lat, lng }) > CASE_KM) throw Object.assign(new Error(`You are ${Math.round(km(c, { lat, lng }))} km away. Only people near it can vote.`), { status: 403 });
+  }
   const me = who(body.device);
   const list = { confirm: c.confirms, fixed: c.fixedVotes, flag: c.flags }[body.what];
   if (!list) throw Object.assign(new Error('Unknown vote'), { status: 400 });
