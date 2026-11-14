@@ -3,3 +3,5 @@ node_modules
 *.log
 .cache/
 data/mla-raw/
+data/pulse/
+data/pulse-test/

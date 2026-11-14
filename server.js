@@ -5,6 +5,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fetchMplads, fetchTenders } from './scripts/mplads-lib.mjs';
 import { decode as decodePicks, tally } from './public/js/predict.js';
+import * as pulse from './pulse.mjs';
 
 const PORT = process.env.PORT || 4173;
 const ROOT = path.join(import.meta.dirname, 'public');
@@ -556,7 +557,9 @@ function overLimit(req) {
   return hit.n > LIMIT_PER_MINUTE;
 }
 
-const INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+// The home page is Aas-paas. The older map app lives at /map and keeps its own addresses.
+const HOME = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const INDEX = fs.readFileSync(path.join(ROOT, 'map.html'), 'utf8');
 const DISTRICTS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/districts.json'), 'utf8'));
 const SEATS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/seats.json'), 'utf8'));
 
@@ -573,6 +576,8 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(400);
     return res.end('Bad request');
   }
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (await pulse.handle(req, res, url, ip)) return;
   const route = url.pathname.match(/^\/api\/(\w+)$/);
   if (route) {
     const fn = Object.hasOwn(API, route[1]) ? API[route[1]] : null;
@@ -598,8 +603,26 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/xml');
     return res.end(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map((p) => `<url><loc>${site}/${p}</loc></url>`).join('')}</urlset>`);
   }
-  // Every page is the same app. Each address gets its own title, so chat previews and search results name the place.
-  const page = rel === '/index.html' ? ['', ''] : rel.match(/^\/(city|seat|ghoomo|about|predict)(?:\/([^/]+))?$/)?.slice(1);
+  const home = rel === '/index.html' ? [] : rel.match(/^\/case\/([0-9a-f]{12})$/)?.slice(1);
+  if (home) {
+    const c = home[0] && pulse.getCase(home[0]);
+    const words = { gaddha: 'गड्ढा', naali: 'नाली', khamba: 'खंभे की बत्ती', kooda: 'कूड़ा' };
+    const title = c ? `${words[c.kind]}, ${c.seatName} (${c.district}): ${c.confirms} लोग परेशान` : 'आपके आस-पास: बिजली, पानी, नेटवर्क, सड़क';
+    const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    console.log('visit', rel, req.headers.referer || '');
+    const tags = `<title>${esc(title)} | Survive Uttar Pradesh</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Survive Uttar Pradesh">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="एक टैप में बताओ, देखो आपके पास कितने लोग परेशान हैं।">
+<meta property="og:image" content="${site}${c ? c.photo : '/img/og.jpg'}">
+<meta property="og:url" content="${site}${c ? `/case/${c.id}` : '/'}">
+<meta name="twitter:card" content="summary_large_image">`;
+    res.writeHead(200, { 'Content-Type': TYPES['.html'], 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding', 'Cache-Control': 'no-cache' });
+    return res.end(zlib.gzipSync(HOME.replace('<title>Survive Uttar Pradesh</title>', tags)));
+  }
+  // Every map page is the same app. Each address gets its own title, so chat previews and search results name the place.
+  const page = rel === '/map' ? ['', ''] : rel.match(/^\/(city|seat|ghoomo|about|predict)(?:\/([^/]+))?$/)?.slice(1);
   if (page) {
     const [kind, value] = page;
     const seat = kind === 'seat' ? SEATS[value] : null;
@@ -617,7 +640,7 @@ const server = http.createServer(async (req, res) => {
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="A live map of Uttar Pradesh: who holds which seat, where the money goes, and where to get chai.">
 <meta property="og:image" content="${site}/img/${card}.jpg">
-<meta property="og:url" content="${site}${rel === '/index.html' ? '/' : encodeURI(rel)}">
+<meta property="og:url" content="${site}${encodeURI(rel)}">
 <meta name="twitter:card" content="summary_large_image">`;
     res.writeHead(200, { 'Content-Type': TYPES['.html'], 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' });
     return res.end(zlib.gzipSync(INDEX.replace('<title>Survive Uttar Pradesh</title>', tags)));

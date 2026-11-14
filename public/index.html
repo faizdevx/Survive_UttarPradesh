@@ -1,150 +1,65 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="utf-8">
-<base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Survive Uttar Pradesh</title>
-<meta name="description" content="A live satellite map of Uttar Pradesh: who holds which seat, who comes from where, and where to get chai.">
+<meta name="description" content="Aapke aas-paas bijli, paani, network, sadak aur jaam ka haal. Ek tap mein batao, dekho kitne log pareshan hain.">
 <meta name="theme-color" content="#7c1113">
-<link rel="icon" href="img/icon-192.png">
-<link rel="manifest" href="manifest.json">
+<link rel="icon" href="/img/icon-192.png">
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Kalam:wght@700&family=Mukta:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@600&family=Rozha+One&family=VT323&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="depth.css">
-<link rel="stylesheet" href="poster.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&family=Rozha+One&display=swap">
+<link rel="stylesheet" href="/aas.css">
 </head>
 <body>
+<header class="top">
+  <a class="brand" href="/">Survive <b>उत्तर प्रदेश</b></a>
+  <button id="placeBtn" class="place" type="button">📍 <span id="placeName">जगह चुनें</span></button>
+</header>
 
-<div id="tv" class="tv" role="dialog" aria-label="Survive Uttar Pradesh intro">
-  <div class="tv-set">
-    <div class="tv-screen" id="tvScreen">
-      <canvas id="static" aria-hidden="true"></canvas>
-      <div class="phone-bar"><span>▂▄▆ ✉</span><span id="clock">--:--</span><span>▮▮▮</span></div>
-
-      <div class="tv-page" id="tvTitle">
-        <h1>Survive<br>Uttar<br>Pradesh!!</h1>
-        <p class="tv-hi">उत्तर प्रदेश में ज़िंदा कैसे रहें</p>
-      </div>
-
-      <div class="phone-keys"><span>Menu</span><span>ArabianTune</span><span>Back</span></div>
-    </div>
-    <div class="tv-controls">
-      <button id="powerBtn" class="power">Turn on</button>
-    </div>
-  </div>
-</div>
-
-<main id="app" class="app">
-  <header class="poster-top">
-    <img class="sil sil-taj" src="img/poster/taj.svg" alt="">
-    <img class="sil sil-palace" src="img/poster/palace.svg" alt="">
-    <nav class="poster-nav nav-main" aria-label="Main">
-      <button id="navHome" class="nav-home" type="button">Home</button>
-      <button id="navExplore" class="nav-wide" type="button">Explore</button>
-      <button id="navData" class="nav-wide" type="button">Data</button>
-      <button id="navAbout" type="button">About</button>
-    </nav>
-    <button id="navCrest" class="crest" type="button" aria-label="Survive Uttar Pradesh, back to the full map">
-      <svg viewBox="0 0 320 132" preserveAspectRatio="none" aria-hidden="true"><path d="M6 8H314V76C314 92 292 92 278 102C252 118 196 104 160 128C124 104 68 118 42 102C28 92 6 92 6 76Z" fill="#7a0f12" stroke="#e9b949" stroke-width="4"/><path d="M15 16H305V74C305 84 286 84 273 94C248 108 194 95 160 117C126 95 72 108 47 94C34 84 15 84 15 74Z" fill="none" stroke="#e9b949" stroke-width="1.4"/></svg>
-      <span><small>Survive</small><b>Uttar Pradesh</b></span>
-    </button>
-    <div class="poster-nav poster-right">
-      <button id="langBtn" type="button" data-keep>हिंदी</button>
-      <button id="shareBtn" type="button">Share</button>
-    </div>
-    <button id="topPick" class="top-pick" type="button">Find my MLA</button>
-  </header>
-
-  <div id="map" class="map" aria-label="Satellite map of Uttar Pradesh"></div>
-
-  <div class="poster-art" aria-hidden="true">
-    <p class="poster-note">A data-powered, no-nonsense guide to Uttar Pradesh.</p>
-    <img class="poster-stamp" src="img/poster/stamp.webp" alt="">
-    <img class="poster-focus" src="img/poster/focus.webp" alt="">
-  </div>
-  <div class="cast">
-    <div class="cast-muse" aria-hidden="true">
-      <img class="muse" src="img/poster/muse.webp" alt="">
-      <img class="rangbaazi" src="img/poster/rangbaazi.webp" alt="">
-    </div>
-    <img class="c-yogi" src="img/poster/yogi.webp" width="425" height="460" alt="">
-    <img class="c-akhilesh" src="img/poster/akhilesh.webp" width="541" height="460" alt="">
-    <img class="c-mayawati" src="img/poster/mayawati.webp" width="360" height="190" alt="">
-    <img class="c-modi" src="img/poster/modi.webp" width="460" height="460" alt="">
-    <p class="cast-note">Edited poster art, made as satire. Not real photos.</p>
-  </div>
-  <div class="poster-skyline" aria-hidden="true"></div>
-
-  <div class="side">
-  <section class="rola" id="rola">
-    <div class="top-btns">
-      <button id="kohraBtn" class="kohra-btn" type="button"><b id="kohraName">Kohra meter</b><span id="kohraLine">Checking the next 48 hours…</span></button>
-      <button id="hisaabBtn" class="hisaab-btn" type="button"><b>Mera Hisaab</b><span>Where UP's money goes, with proof</span></button>
-      <button id="ghoomoBtn" class="ghoomo-btn" type="button"><b>Ghoomo UP</b><span>Niche stuff, 10 ways</span></button>
-      <button id="chunavBtn" class="chunav-btn" aria-pressed="false"><b>Chunav 2027</b><span id="chunavClock"></span></button>
-    </div>
-    <div id="chunavPanel" class="chunav-panel" hidden>
-      <button id="predictBtn" class="action predict-btn" type="button">Predict 2027: make your map</button>
-      <form id="seatForm" class="seat-form">
-        <label for="seatQ">Your area, find your seat</label>
-        <div><input id="seatQ" autocomplete="off" placeholder="Hazratganj, Lucknow"><button type="submit">Find</button></div>
-      </form>
-      <button id="seatGps" class="link-btn" type="button">Use my location</button>
-      <select id="seatPick" aria-label="Choose a seat"><option value="">Or pick a seat</option></select>
-      <div id="seatHits" role="status"></div>
-      <div class="switch two" role="radiogroup" aria-label="Seat colours">
-        <button role="radio" aria-checked="true" data-view="party">Who won 2022</button>
-        <button role="radio" aria-checked="false" data-view="close">How close</button>
-      </div>
-      <div id="seatLegend" class="legend"></div>
-      <div id="seatTally" class="tally"></div>
-      <details class="wall"><summary>10 closest seats of 2022</summary><ol id="closeSeats" class="close-seats"></ol></details>
-      <p class="note">Boundaries are approximate. Confirm your seat on the Election Commission's voter search.</p>
-    </div>
-    <div id="rolaPanel">
-    <h2><button id="rolaToggle" class="rola-toggle" type="button" aria-expanded="true" aria-controls="rolaBody">Rola kiska?</button></h2>
-    <div id="rolaBody">
-    <div class="switch" role="radiogroup" aria-label="Map layer">
-      <button role="radio" aria-checked="true" data-mode="party">Lok Sabha</button>
-      <button role="radio" aria-checked="false" data-mode="mla">Vidhan Sabha</button>
-      <button role="radio" aria-checked="false" data-mode="samaj">Samaj</button>
-    </div>
-    <div id="legend" class="legend"></div>
-    <p id="legendNote" class="note"></p>
-    <label class="today"><input type="checkbox" id="todayNews" checked> Today's UP news on the map</label>
-    <p id="todayMsg" class="note" role="status"></p>
-    <details class="wall">
-      <summary>Poster wall</summary>
-      <div class="wall-grid">
-        <img loading="lazy" src="img/12.jpg" alt="Film-style poster with a burning car">
-        <img loading="lazy" src="img/6.jpg" alt="Poster portrait of a politician">
-        <img loading="lazy" src="img/7.jpg" alt="Poster portrait with folded hands">
-        <img loading="lazy" src="img/8.jpg" alt="Press photo of a politician speaking">
-        <img loading="lazy" src="img/9.jpg" alt="Press photo of a politician in a red cap">
-      </div>
-    </details>
-    </div>
-    </div>
+<main>
+  <section id="start" class="start">
+    <p class="start-big">आपके आस-पास क्या हाल है?</p>
+    <p class="start-small">बिजली, पानी, नेटवर्क, सड़क। एक बटन दबाओ, देखो कितने लोग परेशान हैं।</p>
+    <button id="useGps" class="go" type="button">📍 मेरी जगह बताओ</button>
+    <label class="pick">या ज़िला चुनें
+      <select id="districtPick"><option value="">ज़िला</option></select>
+    </label>
+    <p class="note">आपकी जगह सिर्फ गिनती के लिए है। नाम, नंबर, कुछ नहीं मांगते।</p>
   </section>
 
-  <div class="find">
-    <button id="nearMe" class="near"><img src="img/5.jpg" alt=""><span>Near me</span></button>
-    <select id="districtPick" aria-label="Choose a district"><option value="">Pick a district</option></select>
-    <p id="findMsg" class="note" role="status"></p>
-  </div>
-  </div>
+  <section id="home" hidden>
+    <div class="tiles" id="tiles"></div>
+    <a class="sos" href="tel:112">📞 खतरे में हैं? <b>112</b> पर कॉल करें</a>
 
-  <aside id="dossier" class="dossier" aria-label="Details" tabindex="-1" hidden></aside>
-  <div id="dossierGrip" class="grip" role="separator" tabindex="0" aria-label="Resize this panel. Use the arrow keys, or double click to reset."></div>
-  <button id="peekBtn" class="peek-btn" type="button" hidden>Show map</button>
-  <section id="samayBar" class="samay-bar" aria-label="Samay slider" hidden></section>
-  <div id="radioBar" class="radio-bar" hidden><span>On air: <b id="radioName"></b></span><button id="radioStop" type="button">Stop</button></div>
+    <section class="block" id="mlaBlock" hidden></section>
+
+    <section class="block">
+      <h2>📸 आस-पास की शिकायतें</h2>
+      <div id="cases" class="cases"></div>
+    </section>
+
+    <section class="block">
+      <h2>🗺️ आज पूरे UP में</h2>
+      <div id="stateNow" class="state"></div>
+    </section>
+
+    <footer class="foot">
+      <a href="/map">पुराना नक्शा: विधायक, ज़िले, चुनाव →</a>
+      <p>गिनती पास के लोगों के एक-एक टैप से बनती है। हर टैप कुछ घंटों में अपने-आप हट जाता है। जगह 100 मीटर तक धुंधली रखी जाती है।</p>
+    </footer>
+  </section>
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="js/app.js"></script>
+<div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-card">
+    <button id="sheetClose" class="x" type="button" aria-label="बंद करें">✕</button>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+<input id="camera" type="file" accept="image/*" capture="environment" hidden>
+
+<script type="module" src="/aas.js"></script>
 </body>
 </html>

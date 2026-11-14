@@ -1340,7 +1340,7 @@ const ghoomo = initGhoomo({
 initTilt();
 initGrip({ store });
 // A shared link arrives as a real path. Inside the page, addresses stay as hashes.
-if (location.pathname !== '/') history.replaceState(null, '', `/#${location.pathname.slice(1)}`);
+if (location.pathname !== '/map') history.replaceState(null, '', `/map${location.pathname === '/' ? '' : `#${location.pathname.slice(1)}`}`);
 initLang(store);
 // For whoever maintains the Hindi list: the lines still in English on the pages opened so far
 window.missedHindi = () => [...missed];
